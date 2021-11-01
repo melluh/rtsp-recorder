@@ -1,4 +1,4 @@
-package com.melluh.rtsprecorder;
+package com.melluh.rtsprecorder.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,6 +8,8 @@ import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import com.melluh.rtsprecorder.RtspRecorder;
 
 public class FileUtil {
 
@@ -52,6 +54,22 @@ public class FileUtil {
 			e.printStackTrace();
 			return -1;
 		}
+	}
+	
+	public static long getFolderSize(File directory) {
+		if(!directory.isDirectory())
+			return directory.length();
+		
+		long size = 0;
+		for(File file : directory.listFiles()) {
+			if(file.isDirectory()) {
+				size += getFolderSize(file);
+				continue;
+			}
+			size += file.length();
+		}
+		
+		return size;
 	}
 	
 }

@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import com.melluh.rtsprecorder.http.RecordingsRoute;
+import com.melluh.rtsprecorder.http.StatusRoute;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
@@ -41,6 +42,7 @@ public class RtspRecorder {
 		
 		router.get("/recordings/*").handler(StaticHandler.create("recordings"));
 		router.get("/api/recordings").blockingHandler(new RecordingsRoute());
+		router.get("/api/status").handler(new StatusRoute());
 		
 		server.requestHandler(router).listen(configHandler.getWebPort());
 		LOGGER.info("Web server listening on port " + server.actualPort());

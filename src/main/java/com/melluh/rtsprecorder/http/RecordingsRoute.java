@@ -20,7 +20,7 @@ public class RecordingsRoute implements Handler<RoutingContext> {
 			
 			for(Recording recording : camera.getRecordings()) {
 				JsonObject jsonRecording = new JsonObject();
-				jsonRecording.put("name", recording.getName());
+				jsonRecording.put("url", "/recordings/" + recording.getName());
 				jsonRecording.put("from", recording.getFrom());
 				jsonRecording.put("to", recording.getTo());
 				jsonRecordings.add(jsonRecording);

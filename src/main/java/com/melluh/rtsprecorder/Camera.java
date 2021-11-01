@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.melluh.rtsprecorder.util.FileUtil;
+import com.melluh.rtsprecorder.util.FormatUtil;
+
 public class Camera {
 
 	private String name;
@@ -15,7 +18,10 @@ public class Camera {
 	
 	private float fps;
 	private float speed;
+	
+	private long connectedSince;
 	private long lastUpdate;
+	private boolean isWorking;
 	
 	private Process process;
 	
@@ -37,6 +43,9 @@ public class Camera {
 	public void startProcess() {
 		if(this.isProcessRunning())
 			throw new IllegalStateException();
+		
+		this.isWorking = false;
+		this.connectedSince = 0;
 		
 		try {
 			this.process = new ProcessBuilder("ffmpeg", "-i", url, "-f", "segment", "-strftime", "1", "-segment_time", "600", "-segment_atclocktime", "1", "-segment_format", "mp4", "-an", "-vcodec", "copy", "-reset_timestamps", "1", "-progress", "pipe:1", "%Y-%m-%d-%H.%M.%S.mp4")
@@ -73,10 +82,14 @@ public class Camera {
 					String value = args[1];
 					
 					if(key.equals("fps")) {
-						fps = Float.parseFloat(value);
+						fps = FormatUtil.parseFloat(value);
 						lastUpdate = System.currentTimeMillis();
+						
+						isWorking = true;
+						if(connectedSince <= 0)
+							connectedSince = System.currentTimeMillis();
 					} else if(key.equals("speed")) {
-						speed = Float.parseFloat(value.substring(0, value.length() - 1));
+						speed = value.equals("N/A") ? 0 : FormatUtil.parseFloat(value.substring(0, value.length() - 1));
 					}
 				}
 				
@@ -170,6 +183,14 @@ public class Camera {
 	
 	public boolean isProcessRunning() {
 		return process != null && process.isAlive();
+	}
+	
+	public boolean isWorking() {
+		return isWorking;
+	}
+	
+	public long getConnectedSince() {
+		return connectedSince;
 	}
 	
 }
