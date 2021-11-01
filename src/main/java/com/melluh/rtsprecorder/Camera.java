@@ -11,24 +11,41 @@ public class Camera {
 
 	private String name;
 	private String url;
+	private long timeout;
 	
 	private float fps;
 	private float speed;
 	private long lastUpdate;
 	
-	public Camera(String name, String url) {
+	private Process process;
+	
+	public Camera(String name, String url, long timeout) {
 		this.name = name;
 		this.url = url;
+		this.timeout = timeout;
+	}
+	
+	public void restartProcess() {
+		if(this.isProcessRunning()) {
+			process.destroyForcibly();
+			process = null;
+		}
+		
+		this.startProcess();
 	}
 	
 	public void startProcess() {
+		if(this.isProcessRunning())
+			throw new IllegalStateException();
+		
 		try {
-			Process process = new ProcessBuilder("ffmpeg", "-i", url, "-f", "segment", "-strftime", "1", "-segment_time", "600", "-segment_atclocktime", "1", "-segment_format", "mp4", "-an", "-vcodec", "copy", "-reset_timestamps", "1", "-progress", "pipe:1", "%Y-%m-%d-%H.%M.%S.mp4")
+			this.process = new ProcessBuilder("ffmpeg", "-i", url, "-f", "segment", "-strftime", "1", "-segment_time", "600", "-segment_atclocktime", "1", "-segment_format", "mp4", "-an", "-vcodec", "copy", "-reset_timestamps", "1", "-progress", "pipe:1", "%Y-%m-%d-%H.%M.%S.mp4")
 					.directory(this.getOutputDir())
 					.redirectErrorStream(true)
 					.start();
 			
 			new ProcessMonitorThread(process).start();
+			this.lastUpdate = System.currentTimeMillis();
 		} catch (IOException ex) {
 			RtspRecorder.LOGGER.severe("Failed to start FFmpeg process for camera " + name);
 			ex.printStackTrace();
@@ -135,6 +152,10 @@ public class Camera {
 		return url;
 	}
 	
+	public long getTimeout() {
+		return timeout;
+	}
+	
 	public float getFps() {
 		return fps;
 	}
@@ -145,6 +166,10 @@ public class Camera {
 	
 	public long getLastUpdate() {
 		return lastUpdate;
+	}
+	
+	public boolean isProcessRunning() {
+		return process != null && process.isAlive();
 	}
 	
 }

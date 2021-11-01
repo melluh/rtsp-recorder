@@ -20,6 +20,7 @@ public class RtspRecorder {
 	
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
+	private Watchdog watchdog;
 	
 	private void start() {
 		LOGGER.info("Starting rtsp-recorder...");
@@ -47,7 +48,10 @@ public class RtspRecorder {
 		LOGGER.info("Starting FFmpeg processes...");
 		
 		cameraRegistry.getCameras().forEach(Camera::startProcess);
-		LOGGER.info("FFmpeg started.");
+		this.watchdog = new Watchdog();
+		watchdog.start();
+		
+		LOGGER.info("FFmpeg started and watchdog initialized.");
 	}
 	
 	public CameraRegistry getCameraRegistry() {

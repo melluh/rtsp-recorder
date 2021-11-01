@@ -44,7 +44,7 @@ public class ConfigHandler {
 						return false;
 					}
 					
-					Camera camera = new Camera(name, url);
+					Camera camera = new Camera(name, url, jsonCamera.getLong("timeout", 10000L));
 					RtspRecorder.getInstance().getCameraRegistry().registerCamera(camera);
 				}
 			}
