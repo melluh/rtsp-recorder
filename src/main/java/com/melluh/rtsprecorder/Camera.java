@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Camera {
 
@@ -68,6 +70,53 @@ public class Camera {
 			}
 		}
 		
+	}
+	
+	public List<Recording> getRecordings() {
+		List<Recording> recordings = new ArrayList<>();
+		File directory = this.getOutputDir();
+		
+		for(File file : directory.listFiles()) {
+			if(!file.isFile())
+				continue;
+			
+			long startTime = FileUtil.getRecordingStart(file.getName());
+			if(startTime <= 0)
+				continue;
+			
+			float duration = FileUtil.getRecordingDuration(file);
+			if(duration <= 0)
+				continue;
+
+			recordings.add(new Recording(file.getName(), startTime, (long) (startTime + (duration * 1000.0f))));
+		}
+		
+		return recordings;
+	}
+	
+	public static class Recording {
+		
+		private String name;
+		private long from;
+		private long to;
+		
+		public Recording(String name, long from, long to) {
+			this.name = name;
+			this.from = from;
+			this.to = to;
+		}
+		
+		public String getName() {
+			return name;
+		}
+		
+		public long getFrom() {
+			return from;
+		}
+		
+		public long getTo() {
+			return to;
+		}
 	}
 	
 	private File getOutputDir() {
