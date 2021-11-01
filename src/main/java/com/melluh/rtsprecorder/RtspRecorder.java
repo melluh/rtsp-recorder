@@ -37,6 +37,10 @@ public class RtspRecorder {
 		
 		server.requestHandler(router).listen(configHandler.getWebPort());
 		LOGGER.info("Web server listening on port " + server.actualPort());
+		
+		LOGGER.info("Starting FFmpeg processes...");
+		cameraRegistry.getCameras().forEach(Camera::startProcess);
+		LOGGER.info("FFmpeg started.");
 	}
 	
 	public CameraRegistry getCameraRegistry() {
@@ -50,11 +54,11 @@ public class RtspRecorder {
 	public static void main(String[] args) {
 		ConsoleHandler handler = new ConsoleHandler();
 		handler.setFormatter(new SimpleFormatter() {
-			private static final String FORMAT = "[%1$tF %1$tT] [%2$s] %3$s %n";
+			private static final String FORMAT = "[%1$tF %1$tT] [%2$s/%3$s] %4$s %n";
 			
 			@Override
 			public synchronized String format(LogRecord record) {
-				return String.format(FORMAT, new Date(record.getMillis()), record.getLevel().getName(), record.getMessage());
+				return String.format(FORMAT, new Date(record.getMillis()), record.getLoggerName(), record.getLevel().getName(), record.getMessage());
 			}
 		});
 		LOGGER.setUseParentHandlers(false);

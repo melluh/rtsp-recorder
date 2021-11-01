@@ -21,3 +21,4 @@ bin/
 
 # rtsp-recorder files
 config.json
+recordings/

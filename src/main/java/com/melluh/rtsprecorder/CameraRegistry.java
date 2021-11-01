@@ -11,6 +11,10 @@ public class CameraRegistry {
 		cameras.add(camera);
 		RtspRecorder.LOGGER.info("Camera registered: " + camera.getName());
 	}
+	
+	public List<Camera> getCameras() {
+		return cameras;
+	}
 
 	public int getNumCameras() {
 		return cameras.size();
