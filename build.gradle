@@ -21,6 +21,6 @@ dependencies {
 
 jar {
 	manifest {
-		attributes 'Main-Class': 'com.melluh.rtsprecorder.Main'
+		attributes 'Main-Class': 'com.melluh.rtsprecorder.RtspRecorder'
 	}
 }
