@@ -1,6 +1,9 @@
 package com.melluh.rtsprecorder;
 
 import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -8,6 +11,8 @@ import java.util.logging.SimpleFormatter;
 
 import com.melluh.rtsprecorder.http.RecordingsRoute;
 import com.melluh.rtsprecorder.http.StatusRoute;
+import com.melluh.rtsprecorder.task.MoveRecordingsTask;
+import com.melluh.rtsprecorder.task.WatchdogTask;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
@@ -21,7 +26,7 @@ public class RtspRecorder {
 	
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
-	private Watchdog watchdog;
+	private Database database;
 	
 	private void start() {
 		LOGGER.info("Starting rtsp-recorder...");
@@ -35,12 +40,16 @@ public class RtspRecorder {
 		}
 		
 		LOGGER.info("Finishing loading config, " + cameraRegistry.getNumCameras() + " camera(s) defined");
+		LOGGER.info("Recordings will be stored in " + configHandler.getRecordingsFolder().getAbsolutePath());
+		
+		this.database = new Database();
+		database.connect();
 		
 		Vertx vertx = Vertx.vertx();
 		HttpServer server = vertx.createHttpServer();
 		Router router = Router.router(vertx);
 		
-		router.get("/recordings/*").handler(StaticHandler.create("recordings"));
+		router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
 		router.get("/api/recordings").blockingHandler(new RecordingsRoute());
 		router.get("/api/status").handler(new StatusRoute());
 		
@@ -48,12 +57,13 @@ public class RtspRecorder {
 		LOGGER.info("Web server listening on port " + server.actualPort());
 		
 		LOGGER.info("Starting FFmpeg processes...");
-		
 		cameraRegistry.getCameras().forEach(Camera::startProcess);
-		this.watchdog = new Watchdog();
-		watchdog.start();
+		LOGGER.info("FFmpeg processed started.");
 		
-		LOGGER.info("FFmpeg started and watchdog initialized.");
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
+		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
+		LOGGER.info("Tasks initialized.");
 	}
 	
 	public CameraRegistry getCameraRegistry() {
@@ -62,6 +72,10 @@ public class RtspRecorder {
 	
 	public ConfigHandler getConfigHandler() {
 		return configHandler;
+	}
+
+	public Database getDatabase() {
+		return database;
 	}
 	
 	public static void main(String[] args) {

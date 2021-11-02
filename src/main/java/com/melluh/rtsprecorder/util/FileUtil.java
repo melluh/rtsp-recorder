@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import com.melluh.rtsprecorder.RtspRecorder;
@@ -17,19 +16,12 @@ public class FileUtil {
 	
 	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss");
 	
-	public static long getRecordingStart(String fileName) {
-		int dotIndex = fileName.lastIndexOf(".");
-		if(dotIndex == -1)
-			return -1;
-		
-		String baseName = fileName.substring(0, dotIndex);
-		
+	public static LocalDateTime parseFileDateTime(String fileName) {
 		try {
-			LocalDateTime dateTime = LocalDateTime.from(FORMATTER.parse(baseName));
-			return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+			return LocalDateTime.from(FORMATTER.parse(fileName));
 		} catch (DateTimeException ex) {
 			RtspRecorder.LOGGER.warning("Failed to parse " + fileName);
-			return -1;
+			return null;
 		}
 	}
 	
@@ -41,7 +33,6 @@ public class FileUtil {
 			process.waitFor();
 			
 			if(process.exitValue() != 0) {
-				RtspRecorder.LOGGER.warning(file.getParentFile().getName() + "/" + file.getName() + " is probably corrupt (ffprobe failed with exit code " + process.exitValue() + ")");
 				return -1;
 			}
 			

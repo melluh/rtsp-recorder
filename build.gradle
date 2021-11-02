@@ -17,6 +17,7 @@ repositories {
 dependencies {
 	implementation("io.vertx:vertx-core:4.1.5")
 	implementation("io.vertx:vertx-web:4.1.5")
+	implementation("org.xerial:sqlite-jdbc:3.36.0.3")
 }
 
 jar {

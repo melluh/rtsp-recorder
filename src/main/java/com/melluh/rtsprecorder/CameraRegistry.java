@@ -19,5 +19,19 @@ public class CameraRegistry {
 	public int getNumCameras() {
 		return cameras.size();
 	}
+
+	public Camera getCamera(String name) {
+		for(Camera camera : cameras) {
+			if(camera.getName().equalsIgnoreCase(name))
+				return camera;
+		}
+		
+		return null;
+	}
+	
+	public boolean isInProgressFile(String name) {
+		return cameras.stream()
+				.anyMatch(camera -> camera.getFileInProgress() != null && camera.getFileInProgress().equals(name));
+	}
 	
 }

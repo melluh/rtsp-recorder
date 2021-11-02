@@ -1,17 +1,12 @@
-package com.melluh.rtsprecorder;
+package com.melluh.rtsprecorder.task;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import com.melluh.rtsprecorder.Camera;
+import com.melluh.rtsprecorder.RtspRecorder;
 
-public class Watchdog {
+public class WatchdogTask implements Runnable {
 	
-	public void start() {
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		executor.scheduleAtFixedRate(this::runChecks, 1, 1, TimeUnit.SECONDS);
-	}
-	
-	private void runChecks() {
+	@Override
+	public void run() {
 		long currentTime = System.currentTimeMillis();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
 			long timePassed = currentTime - camera.getLastUpdate();

@@ -2,6 +2,11 @@ package com.melluh.rtsprecorder.util;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class FormatUtil {
@@ -34,6 +39,36 @@ public class FormatUtil {
 		} catch (NumberFormatException ignored) {
 			return 0;
 		}
+	}
+	
+	public static LocalDate parseDate(String str) {
+		if(str == null || str.isEmpty())
+			return null;
+		
+		try {
+			return LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(str));
+		} catch (DateTimeException ignored) {
+			return null;
+		}
+	}
+	
+	public static LocalDateTime parseDateTime(String str) {
+		if(str == null || str.isEmpty())
+			return null;
+		
+		try {
+			return LocalDateTime.from(DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(str));
+		} catch (DateTimeException ignored) {
+			return null;
+		}
+	}
+	
+	public static String formatDate(LocalDate date) {
+		return date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+	}
+	
+	public static String formatTime(LocalTime time) {
+		return time.format(DateTimeFormatter.ofPattern("HH.mm.ss"));
 	}
 	
 }

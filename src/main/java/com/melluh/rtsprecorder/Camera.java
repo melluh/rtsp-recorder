@@ -4,14 +4,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
 
 public class Camera {
-
+	
+	private static final Pattern OPENING_FOR_WRITING_PATTERN = Pattern.compile("Opening '(\\S+)' for writing");
+	
 	private String name;
 	private String url;
 	private long timeout;
@@ -24,6 +26,7 @@ public class Camera {
 	private boolean isWorking;
 	
 	private Process process;
+	private String fileInProgress;
 	
 	public Camera(String name, String url, long timeout) {
 		this.name = name;
@@ -46,10 +49,15 @@ public class Camera {
 		
 		this.isWorking = false;
 		this.connectedSince = 0;
+		this.fileInProgress = null;
 		
 		try {
-			this.process = new ProcessBuilder("ffmpeg", "-i", url, "-f", "segment", "-strftime", "1", "-segment_time", "600", "-segment_atclocktime", "1", "-segment_format", "mp4", "-an", "-vcodec", "copy", "-reset_timestamps", "1", "-progress", "pipe:1", "%Y-%m-%d-%H.%M.%S.mp4")
-					.directory(this.getOutputDir())
+			File tempFolder = new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), "temp");
+			tempFolder.mkdirs();
+			String fileName = name + "-%Y-%m-%d-%H.%M.%S.mp4";
+			
+			this.process = new ProcessBuilder("ffmpeg", "-i", url, "-f", "segment", "-strftime", "1", "-segment_time", "600", "-segment_atclocktime", "1", "-segment_format", "mp4", "-an", "-vcodec", "copy", "-reset_timestamps", "1", "-progress", "pipe:1", fileName)
+					.directory(tempFolder)
 					.redirectErrorStream(true)
 					.start();
 			
@@ -74,22 +82,12 @@ public class Camera {
 			try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
 				String line;
 				while((line = reader.readLine()) != null) {
-					String[] args = line.split("=");
-					if(args.length != 2)
+					if(this.tryParseValue(line))
 						continue;
 					
-					String key = args[0];
-					String value = args[1];
-					
-					if(key.equals("fps")) {
-						fps = FormatUtil.parseFloat(value);
-						lastUpdate = System.currentTimeMillis();
-						
-						isWorking = true;
-						if(connectedSince <= 0)
-							connectedSince = System.currentTimeMillis();
-					} else if(key.equals("speed")) {
-						speed = value.equals("N/A") ? 0 : FormatUtil.parseFloat(value.substring(0, value.length() - 1));
+					Matcher matcher = OPENING_FOR_WRITING_PATTERN.matcher(line);
+					if(matcher.find()) {
+						fileInProgress = matcher.group(1);
 					}
 				}
 				
@@ -100,61 +98,28 @@ public class Camera {
 			}
 		}
 		
-	}
-	
-	public List<Recording> getRecordings() {
-		List<Recording> recordings = new ArrayList<>();
-		File directory = this.getOutputDir();
-		
-		for(File file : directory.listFiles()) {
-			if(!file.isFile())
-				continue;
+		private boolean tryParseValue(String line) {
+			String[] args = line.split("=");
+			if(args.length != 2)
+				return false;
 			
-			long startTime = FileUtil.getRecordingStart(file.getName());
-			if(startTime <= 0)
-				continue;
+			String key = args[0];
+			String value = args[1];
 			
-			float duration = FileUtil.getRecordingDuration(file);
-			if(duration <= 0)
-				continue;
-
-			recordings.add(new Recording(file.getName(), startTime, (long) (startTime + (duration * 1000.0f))));
+			if(key.equals("fps")) {
+				fps = FormatUtil.parseFloat(value);
+				lastUpdate = System.currentTimeMillis();
+				
+				isWorking = true;
+				if(connectedSince <= 0)
+					connectedSince = System.currentTimeMillis();
+			} else if(key.equals("speed")) {
+				speed = value.equals("N/A") ? 0 : FormatUtil.parseFloat(value.substring(0, value.length() - 1));
+			}
+			
+			return true;
 		}
 		
-		return recordings;
-	}
-	
-	public static class Recording {
-		
-		private String name;
-		private long from;
-		private long to;
-		
-		public Recording(String name, long from, long to) {
-			this.name = name;
-			this.from = from;
-			this.to = to;
-		}
-		
-		public String getName() {
-			return name;
-		}
-		
-		public long getFrom() {
-			return from;
-		}
-		
-		public long getTo() {
-			return to;
-		}
-	}
-	
-	private File getOutputDir() {
-		File directory = new File("recordings/" + name);
-		if(!directory.isDirectory()) {
-			directory.mkdirs();
-		}
-		return directory;
 	}
 	
 	public String getName() {
@@ -191,6 +156,14 @@ public class Camera {
 	
 	public long getConnectedSince() {
 		return connectedSince;
+	}
+	
+	public String getFileInProgress() {
+		return fileInProgress;
+	}
+	
+	public long getPid() {
+		return process != null ? process.pid() : 0;
 	}
 	
 }

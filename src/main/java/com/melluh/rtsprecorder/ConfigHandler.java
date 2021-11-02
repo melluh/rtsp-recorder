@@ -13,6 +13,7 @@ public class ConfigHandler {
 	private static final String FILENAME = "config.json";
 	
 	private int webPort;
+	private File recordingsFolder;
 	
 	public boolean load() {
 		File file = new File(FILENAME);
@@ -26,6 +27,7 @@ public class ConfigHandler {
 			JsonObject json = new JsonObject(str);
 			
 			this.webPort = json.getInteger("web.port", 8080);
+			this.recordingsFolder = new File(json.getString("recordings_folder", "recordings"));
 			
 			JsonArray jsonCameras = json.getJsonArray("cameras");
 			if(jsonCameras != null) {
@@ -44,7 +46,7 @@ public class ConfigHandler {
 						return false;
 					}
 					
-					Camera camera = new Camera(name, url, jsonCamera.getLong("timeout", 10000L));
+					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.getLong("timeout", 10000L));
 					RtspRecorder.getInstance().getCameraRegistry().registerCamera(camera);
 				}
 			}
@@ -63,6 +65,20 @@ public class ConfigHandler {
 	
 	public int getWebPort() {
 		return webPort;
+	}
+	
+	public File getRecordingsFolder() {
+		return ensureDir(recordingsFolder);
+	}
+	
+	public File getTempRecordingsFolder() {
+		return ensureDir(new File(recordingsFolder, "temp"));
+	}
+	
+	private File ensureDir(File dir) {
+		if(!dir.isDirectory())
+			dir.mkdirs();
+		return dir;
 	}
 	
 }
