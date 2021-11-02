@@ -26,6 +26,7 @@ public class StatusRoute implements Handler<RoutingContext> {
 			cameraJson.put("speed", camera.getSpeed());
 			cameraJson.put("isWorking", camera.isWorking());
 			cameraJson.put("connectedSince", camera.getConnectedSince());
+			cameraJson.put("pid", camera.getPid());
 			camerasJson.put(camera.getName(), cameraJson);
 		}
 		

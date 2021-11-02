@@ -36,7 +36,17 @@ public class Camera {
 	
 	public void restartProcess() {
 		if(this.isProcessRunning()) {
-			process.destroyForcibly();
+			process.destroy();
+			
+			try {
+				if(!process.waitFor(5000, TimeUnit.SECONDS)) {
+					RtspRecorder.LOGGER.warning("FFmpeg for camera " + name + " did not exit gracefully within 5 seconds, kiling process");
+					process.destroyForcibly();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 			process = null;
 		}
 		
