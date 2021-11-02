@@ -1,6 +1,8 @@
 const cameraSelect = document.getElementById("camera-select");
 const dateSelect = document.getElementById("date-select");
-const recordingsTable = document.getElementById("recordings-table");
+const recordingsContainer = document.getElementById("recordings");
+const videoView = document.getElementById("video-view");
+const nowViewingElement = document.getElementById("now-viewing");
 
 // Set default and max value to today
 dateSelect.valueAsDate = new Date();
@@ -36,13 +38,32 @@ function updateCamerasDropdown() {
 }
 
 function loadRecordings() {
-    recordingsTable.innerHTML = "";
+    recordingsContainer.innerHTML = "";
 
     fetch("/api/recordings?camera=" + cameraSelect.value + "&date=" + formatDate(dateSelect.valueAsDate)).then(r => r.json()).then(json => {
         json.forEach(recording => {
-            var row = recordingsTable.insertRow();
-            row.insertCell().innerHTML = "<a href=\"/recordings/" + recording.filePath + "\">" + recording.filePath + "</a>";
-            row.insertCell().innerHTML =  recording.startTime + " - " + recording.endTime;
+            var recordingElement = document.createElement("div");
+            recordingElement.classList.add("recording");
+            recordingsContainer.appendChild(recordingElement);
+
+            var durationElement = document.createElement("p");
+            durationElement.innerHTML = recording.startTime + " - " + recording.endTime;
+            durationElement.classList.add("recording-duration");
+            recordingElement.appendChild(durationElement);
+
+            var playIcon = document.createElement("img");
+            playIcon.src = "assets/icons/eye.svg";
+            playIcon.classList.add("recording-view-icon")
+            recordingElement.appendChild(playIcon);
+
+            playIcon.addEventListener("click", e => {
+                videoView.src = "/recordings/" + recording.filePath;
+                videoView.play();
+                nowViewingElement.innerHTML = "Now viewing: <a href=\"/recordings/" + recording.filePath + "?download=1\">" + recording.filePath + "</a>";
+
+                Array.from(document.querySelectorAll(".recording-view-icon-active")).forEach((el) => el.classList.remove("recording-view-icon-active"));
+                playIcon.classList.add("recording-view-icon-active");
+            });
         });
     });
 }

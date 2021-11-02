@@ -4,17 +4,45 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <link href="assets/main.css" rel="stylesheet">
+        <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+        <link rel="stylesheet" href="assets/normalize.css">
+        <link rel="stylesheet" href="assets/skeleton.css">
+        <link rel="stylesheet" href="assets/main.css">
 
         <title>rtsp-recorder</title>
     </head>
     <body>
-        <select id="camera-select">
-            <option selected disabled>Loading...</option>
-        </select>
-        <input type="date" id="date-select">
+        <div class="container">
+            <div class="row">
+                <div class="three columns">
+                    <select id="camera-select">
+                        <option selected disabled>Loading...</option>
+                    </select>
+                    <input type="date" id="date-select">
 
-        <table id="recordings-table"></table>
+                    <hr>
+                    <div id="recordings"></div>
+                </div>
+                <div class="nine columns">
+                    <video id="video-view" controls muted></video>
+                    <p id="now-viewing"></p>
+                </div>
+            </div>
+        </div>
+
+        <!--<div id="filters">
+            <select id="camera-select">
+                <option selected disabled>Loading...</option>
+            </select>
+            <input type="date" id="date-select">
+        </div>
+
+        <div id="recordings"></div>
+
+        <div id="video-container">
+            <video id="video-view" controls muted></video>
+        </div>-->
 
         <script src="assets/main.js"></script>
     </body>

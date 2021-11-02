@@ -1,0 +1,93 @@
+/*#filters {
+    width: 250px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+#camera-select {
+    width: 100%;
+}
+
+#date-select {
+    margin-top: 5px;
+}
+
+#recordings {
+    border: 1px solid black;
+    height: 400px;
+    width: 250px;
+    overflow-y: scroll;
+    padding: 10px;
+}
+
+.recording {
+    margin-bottom: 10px;
+}
+
+.recording-duration {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.recording-view-icon {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+#video-container {
+    float: left;
+    display: inline-block;
+}*/
+
+body {
+    padding: 25px;
+}
+
+video {
+    width: 100%;
+    height: auto;
+}
+
+.container {
+    width: 100%;
+    max-width: none;
+}
+
+#recordings {
+    overflow-y: auto;
+    height: 600px;
+}
+
+.recording {
+    margin-bottom: 10px;
+}
+
+.recording-duration {
+    display: inline-block;
+    margin: 0;
+}
+
+.recording-view-icon {
+    width: auto;
+    height: 100%;
+    vertical-align: middle;
+    cursor: pointer;
+    float: right;
+    margin-right: 25px;
+}
+
+.recording-view-icon-active {
+    /* Equivalent of #33C3F0 */
+    filter: invert(79%) sepia(32%) saturate(5408%) hue-rotate(159deg) brightness(99%) contrast(91%);
+}
+
+#date-select {
+    height: 38px;
+    padding: 6px 10px; /* The 6px vertically centers text on FF, ignored by Webkit */
+    background-color: #fff;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
