@@ -5,6 +5,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -21,6 +22,10 @@ import io.vertx.ext.web.handler.StaticHandler;
 
 public class RtspRecorder {
 
+	static {
+		System.setProperty("java.util.logging.manager", CustomLogManager.class.getName());
+	}
+	
 	public static final Logger LOGGER = Logger.getLogger("rtsp-recorder");
 	private static RtspRecorder instance;
 	
@@ -58,6 +63,7 @@ public class RtspRecorder {
 		LOGGER.info("Web server listening on port " + server.actualPort());
 		
 		LOGGER.info("Starting FFmpeg processes...");
+		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 		cameraRegistry.getCameras().forEach(Camera::startProcess);
 		LOGGER.info("FFmpeg processed started.");
 		
@@ -65,6 +71,19 @@ public class RtspRecorder {
 		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
 		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
 		LOGGER.info("Tasks initialized.");
+	}
+	
+	private class ShutdownHook extends Thread {
+		
+		@Override
+		public void run() {
+			LOGGER.info("Stopping FFmpeg processes...");
+			cameraRegistry.getCameras().forEach(Camera::stopProcess);
+			
+			LOGGER.info("Goodbye!");
+			CustomLogManager.resetFinally();
+		}
+		
 	}
 	
 	public CameraRegistry getCameraRegistry() {
@@ -94,6 +113,28 @@ public class RtspRecorder {
 		
 		instance = new RtspRecorder();
 		instance.start();
+	}
+	
+	// this is needed to make sure logging keeps working in the shutdown hook
+	public static class CustomLogManager extends LogManager {
+		
+		private static CustomLogManager instance;
+		
+		public CustomLogManager() {
+			instance = this;
+		}
+		
+		@Override
+		public void reset() throws SecurityException {}
+		
+		private void resetSuper() {
+			super.reset();
+		}
+		
+		public static void resetFinally() {
+			instance.resetSuper();
+		}
+		
 	}
 	
 	public static RtspRecorder getInstance() {

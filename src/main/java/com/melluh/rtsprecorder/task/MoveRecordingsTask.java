@@ -59,6 +59,8 @@ public class MoveRecordingsTask implements Runnable {
 			RtspRecorder.getInstance().getDatabase().storeRecording(new Recording(path, cameraName, startTime, endTime));
 			
 			File newFile = new File(recordingsDir, path);
+			newFile.getParentFile().mkdirs();
+			
 			if(!file.renameTo(newFile)) {
 				RtspRecorder.LOGGER.warning("Failed to move " + file.getAbsolutePath() + " to " + newFile.getAbsolutePath());
 			} else numMovedFiles++;

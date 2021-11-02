@@ -36,21 +36,28 @@ public class Camera {
 	
 	public void restartProcess() {
 		if(this.isProcessRunning()) {
-			process.destroy();
-			
-			try {
-				if(!process.waitFor(5000, TimeUnit.SECONDS)) {
-					RtspRecorder.LOGGER.warning("FFmpeg for camera " + name + " did not exit gracefully within 5 seconds, kiling process");
-					process.destroyForcibly();
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			process = null;
+			this.stopProcess();
 		}
 		
 		this.startProcess();
+	}
+	
+	public void stopProcess() {
+		if(!this.isProcessRunning())
+			throw new IllegalStateException();
+		
+		process.destroy();
+		
+		try {
+			if(!process.waitFor(5000, TimeUnit.SECONDS)) {
+				RtspRecorder.LOGGER.warning("FFmpeg for camera " + name + " did not exit gracefully within 5 seconds, kiling process");
+				process.destroyForcibly();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		process = null;
 	}
 	
 	public void startProcess() {
