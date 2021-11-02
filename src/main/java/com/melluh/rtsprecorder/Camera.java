@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,14 +47,17 @@ public class Camera {
 		if(!this.isProcessRunning())
 			throw new IllegalStateException();
 		
-		process.destroy();
-		
 		try {
+			// Send 'q', which should cause FFmpeg to exit
+			OutputStream out = process.getOutputStream();
+			out.write("q".getBytes());
+			out.flush();
+			
 			if(!process.waitFor(5000, TimeUnit.SECONDS)) {
 				RtspRecorder.LOGGER.warning("FFmpeg for camera " + name + " did not exit gracefully within 5 seconds, kiling process");
 				process.destroyForcibly();
 			}
-		} catch (InterruptedException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 
@@ -108,7 +112,10 @@ public class Camera {
 					}
 				}
 				
-				RtspRecorder.LOGGER.info("FFmpeg process exited");
+				// ffmpeg process stopped
+				isWorking = false;
+				connectedSince = 0;
+				fileInProgress = null;
 			} catch (IOException ex) {
 				RtspRecorder.LOGGER.severe("Failed to read output from FFmpeg process for camera " + name);
 				ex.printStackTrace();
