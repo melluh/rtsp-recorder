@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import com.melluh.rtsprecorder.http.RecordingsRoute;
-import com.melluh.rtsprecorder.http.RecordingsStaticRoute;
 import com.melluh.rtsprecorder.http.StatusRoute;
 import com.melluh.rtsprecorder.task.MoveRecordingsTask;
 import com.melluh.rtsprecorder.task.WatchdogTask;
@@ -56,7 +55,7 @@ public class RtspRecorder {
 		Router router = Router.router(vertx);
 		
 		router.get().handler(StaticHandler.create("web").setCachingEnabled(false).setFilesReadOnly(false));
-		router.get("/recordings/*").handler(new RecordingsStaticRoute());
+		router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
 		router.get("/api/recordings").blockingHandler(new RecordingsRoute());
 		router.get("/api/status").handler(new StatusRoute());
 		
