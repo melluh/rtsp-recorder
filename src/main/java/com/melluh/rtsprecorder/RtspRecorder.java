@@ -55,7 +55,7 @@ public class RtspRecorder {
 		HttpServer server = vertx.createHttpServer();
 		Router router = Router.router(vertx);
 		
-		router.get().handler(StaticHandler.create("web").setCachingEnabled(false).setFilesReadOnly(false));
+		router.get().handler(StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false));
 		router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
 		router.get("/api/recordings").blockingHandler(new RecordingsRoute());
 		router.get("/api/status").handler(new StatusRoute());
