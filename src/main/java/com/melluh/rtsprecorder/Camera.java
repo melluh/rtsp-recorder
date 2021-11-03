@@ -24,7 +24,9 @@ public class Camera {
 	
 	private long connectedSince;
 	private long lastUpdate;
-	private boolean isWorking;
+	private boolean isWorking, isRestarting;
+	private int failedStarts;
+	private long retryStartTime;
 	
 	private Process process;
 	private String fileInProgress;
@@ -36,6 +38,8 @@ public class Camera {
 	}
 	
 	public void restartProcess() {
+		this.isRestarting = true;
+		
 		if(this.isProcessRunning()) {
 			this.stopProcess();
 		}
@@ -47,13 +51,21 @@ public class Camera {
 		if(!this.isProcessRunning())
 			throw new IllegalStateException();
 		
+		// if not writing to any files, just kill the process right away
+		if(fileInProgress == null) {
+			failedStarts++;
+			process.destroyForcibly();
+			process = null;
+			return;
+		}
+		
 		try {
 			// Send 'q', which should cause FFmpeg to exit
 			OutputStream out = process.getOutputStream();
 			out.write("q".getBytes());
 			out.flush();
 			
-			if(!process.waitFor(5000, TimeUnit.SECONDS)) {
+			if(!process.waitFor(5, TimeUnit.SECONDS)) {
 				RtspRecorder.LOGGER.warning("FFmpeg for camera " + name + " did not exit gracefully within 5 seconds, kiling process");
 				process.destroyForcibly();
 			}
@@ -69,6 +81,7 @@ public class Camera {
 			throw new IllegalStateException();
 		
 		this.isWorking = false;
+		this.isRestarting = false;
 		this.connectedSince = 0;
 		this.fileInProgress = null;
 		
@@ -135,6 +148,7 @@ public class Camera {
 				lastUpdate = System.currentTimeMillis();
 				
 				isWorking = true;
+				failedStarts = 0;
 				if(connectedSince <= 0)
 					connectedSince = System.currentTimeMillis();
 			} else if(key.equals("speed")) {
@@ -188,6 +202,23 @@ public class Camera {
 	
 	public long getPid() {
 		return process != null ? process.pid() : 0;
+	}
+	
+	public boolean isRestarting() {
+		return isRestarting;
+	}
+	
+	public int getFailedStarts() {
+		return failedStarts;
+	}
+	
+	public void setRetryStartTime(long retryStartTime) {
+		this.retryStartTime = retryStartTime;
+		this.failedStarts = 0;
+	}
+	
+	public long getRetryStartTime() {
+		return retryStartTime;
 	}
 	
 }

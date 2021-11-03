@@ -1,6 +1,7 @@
 package com.melluh.rtsprecorder;
 
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,8 @@ public class RtspRecorder {
 	
 	public static final Logger LOGGER = Logger.getLogger("rtsp-recorder");
 	private static RtspRecorder instance;
+	
+	private final ExecutorService threadPool = Executors.newCachedThreadPool();
 	
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
@@ -98,6 +101,10 @@ public class RtspRecorder {
 
 	public Database getDatabase() {
 		return database;
+	}
+	
+	public ExecutorService getThreadPool() {
+		return threadPool;
 	}
 	
 	public static void main(String[] args) {
