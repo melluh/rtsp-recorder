@@ -17,7 +17,6 @@ public class MoveRecordingsTask implements Runnable {
 		File recordingsDir = configHandler.getRecordingsFolder();
 		File tempDir = configHandler.getTempRecordingsFolder();
 		
-		int numMovedFiles = 0;
 		for(File file : tempDir.listFiles()) {
 			String fileName = file.getName();
 			if(!file.isFile() || !fileName.endsWith(".mp4") || RtspRecorder.getInstance().getCameraRegistry().isInProgressFile(fileName))
@@ -63,11 +62,8 @@ public class MoveRecordingsTask implements Runnable {
 			
 			if(!file.renameTo(newFile)) {
 				RtspRecorder.LOGGER.warning("Failed to move " + file.getAbsolutePath() + " to " + newFile.getAbsolutePath());
-			} else numMovedFiles++;
+			}
 		}
-		
-		if(numMovedFiles > 0)
-			RtspRecorder.LOGGER.info("Moved " + numMovedFiles + " recordings");
 	}
 	
 	private void delete(File file) {

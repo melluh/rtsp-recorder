@@ -14,6 +14,8 @@ public class ConfigHandler {
 	
 	private int webPort;
 	private File recordingsFolder;
+	private int recordingsInterval;
+	private int recordingsMaxSize;
 	
 	public boolean load() {
 		File file = new File(FILENAME);
@@ -26,8 +28,10 @@ public class ConfigHandler {
 			String str = Files.readString(file.toPath());
 			JsonObject json = new JsonObject(str);
 			
-			this.webPort = json.getInteger("web.port", 8080);
-			this.recordingsFolder = new File(json.getString("recordings_folder", "recordings"));
+			this.webPort = this.getInt(json, "web.port", 8080);
+			this.recordingsFolder = new File(this.getString(json, "recordings.location", "recordings"));
+			this.recordingsInterval = this.getInt(json, "recordings.interval", 600);
+			this.recordingsMaxSize = this.getInt(json, "recordings.max_size_gb", -1);
 			
 			JsonArray jsonCameras = json.getJsonArray("cameras");
 			if(jsonCameras != null) {
@@ -46,7 +50,7 @@ public class ConfigHandler {
 						return false;
 					}
 					
-					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.getLong("timeout", 10000L));
+					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.getLong("timeout_ms", 10000L));
 					RtspRecorder.getInstance().getCameraRegistry().registerCamera(camera);
 				}
 			}
@@ -63,6 +67,30 @@ public class ConfigHandler {
 		}
 	}
 	
+	private int getInt(JsonObject json, String key, int def) {
+		String[] parts = key.split("\\.");
+		
+		for(int i = 0; i < parts.length - 1; i++) {
+			json = json.getJsonObject(parts[i]);
+			if(json == null)
+				return def;
+		}
+		
+		return json.getInteger(parts[parts.length - 1], def);
+	}
+	
+	private String getString(JsonObject json, String key, String def) {
+		String[] parts = key.split("\\.");
+		
+		for(int i = 0; i < parts.length - 1; i++) {
+			json = json.getJsonObject(parts[i]);
+			if(json == null)
+				return def;
+		}
+		
+		return json.getString(parts[parts.length - 1], def);
+	}
+	
 	public int getWebPort() {
 		return webPort;
 	}
@@ -73,6 +101,14 @@ public class ConfigHandler {
 	
 	public File getTempRecordingsFolder() {
 		return ensureDir(new File(recordingsFolder, "temp"));
+	}
+	
+	public int getRecordingsInterval() {
+		return recordingsInterval;
+	}
+	
+	public int getRecordingsMaxSize() {
+		return recordingsMaxSize;
 	}
 	
 	private File ensureDir(File dir) {

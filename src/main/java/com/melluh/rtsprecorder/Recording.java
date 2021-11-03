@@ -1,5 +1,6 @@
 package com.melluh.rtsprecorder;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,6 +18,10 @@ public class Recording {
 		this.cameraName = cameraName;
 		this.startTime = startTime;
 		this.endTime = endTime;
+	}
+	
+	public File getFile() {
+		return new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), filePath);
 	}
 	
 	public JsonObject toJson() {

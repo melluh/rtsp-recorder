@@ -12,6 +12,7 @@ import java.util.logging.SimpleFormatter;
 
 import com.melluh.rtsprecorder.http.RecordingsRoute;
 import com.melluh.rtsprecorder.http.StatusRoute;
+import com.melluh.rtsprecorder.task.CleanupRecordingsTask;
 import com.melluh.rtsprecorder.task.MoveRecordingsTask;
 import com.melluh.rtsprecorder.task.WatchdogTask;
 
@@ -70,6 +71,7 @@ public class RtspRecorder {
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
 		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
+		executor.scheduleAtFixedRate(new CleanupRecordingsTask(), 0, 30, TimeUnit.MINUTES);
 		LOGGER.info("Tasks initialized.");
 	}
 	

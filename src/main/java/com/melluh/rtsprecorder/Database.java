@@ -51,19 +51,41 @@ public class Database {
 			prepStmt.setString(1, date.format(DateTimeFormatter.ISO_LOCAL_DATE));
 			prepStmt.setString(2, cameraName);
 			
-			List<Recording> recordings = new ArrayList<>();
 			ResultSet result = prepStmt.executeQuery();
-			
-			while(result.next()) {
-				LocalDateTime startTime = FormatUtil.parseDateTime(result.getString("start_time"));
-				LocalDateTime endTime = FormatUtil.parseDateTime(result.getString("end_time"));
-				recordings.add(new Recording(result.getString("file_path"), result.getString("camera_name"), startTime, endTime));
-			}
-			
-			return recordings;
+			return this.getRecordingsList(result);
 		} catch (SQLException ex) {
 			ex.printStackTrace();
 			return null;
+		}
+	}
+	
+	public List<Recording> getOldestRecordings(int num) {
+		try {
+			ResultSet result = conn.createStatement().executeQuery("SELECT * FROM recordings ORDER BY start_time ASC LIMIT " + num);
+			return this.getRecordingsList(result);
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+	private List<Recording> getRecordingsList(ResultSet result) throws SQLException {
+		List<Recording> recordings = new ArrayList<>();
+		while(result.next()) {
+			LocalDateTime startTime = FormatUtil.parseDateTime(result.getString("start_time"));
+			LocalDateTime endTime = FormatUtil.parseDateTime(result.getString("end_time"));
+			recordings.add(new Recording(result.getString("file_path"), result.getString("camera_name"), startTime, endTime));
+		}
+		return recordings;
+	}
+	
+	public void removeRecording(String filePath) {
+		try {
+			PreparedStatement prepStmt = conn.prepareStatement("DELETE FROM recordings WHERE file_path = ?");
+			prepStmt.setString(1, filePath);
+			prepStmt.executeUpdate();
+		} catch (SQLException ex) {
+			ex.printStackTrace();
 		}
 	}
 	
