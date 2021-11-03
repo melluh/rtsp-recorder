@@ -24,7 +24,7 @@ public class Camera {
 	
 	private long connectedSince;
 	private long lastUpdate;
-	private boolean isWorking, isRestarting;
+	private boolean isWorking, isRestarting, isShuttingDown;
 	private int failedStarts;
 	private long retryStartTime;
 	
@@ -50,6 +50,9 @@ public class Camera {
 	public void stopProcess() {
 		if(!this.isProcessRunning())
 			throw new IllegalStateException();
+		
+		this.isWorking = false;
+		this.isShuttingDown = true;
 		
 		// if not writing to any files, just kill the process right away
 		if(fileInProgress == null) {
@@ -84,6 +87,7 @@ public class Camera {
 		this.isRestarting = false;
 		this.connectedSince = 0;
 		this.fileInProgress = null;
+		this.isShuttingDown = false;
 		
 		try {
 			File tempFolder = new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), "temp");
@@ -114,6 +118,8 @@ public class Camera {
 		@Override
 		public void run() {
 			try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				RtspRecorder.LOGGER.info("Process started: " + Camera.this.name);
+				
 				String line;
 				while((line = reader.readLine()) != null) {
 					if(this.tryParseValue(line))
@@ -123,6 +129,12 @@ public class Camera {
 					if(matcher.find()) {
 						fileInProgress = matcher.group(1);
 					}
+				}
+				
+				if(isWorking && !isShuttingDown) {
+					process = null;
+					RtspRecorder.LOGGER.warning("FFmpeg for camera " + Camera.this.name + " exited, restarting..");
+					startProcess();
 				}
 				
 				// ffmpeg process stopped
