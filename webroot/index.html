@@ -17,7 +17,7 @@
             <div class="row">
                 <div class="three columns">
                     <select id="camera-select">
-                        <option selected disabled>Loading...</option>
+                        <option selected disabled value="none">Loading...</option>
                     </select>
                     <input type="date" id="date-select">
 
@@ -26,23 +26,18 @@
                 </div>
                 <div class="nine columns">
                     <video id="video-view" controls muted></video>
-                    <p id="now-viewing"></p>
+                    <div id="video-info">
+                        <p id="now-viewing"></p>
+                        <select id="video-speed">
+                            <option selected value="1.0">Speed: 1.0x</option>
+                            <option value="2.0">Speed: 2.0x</option>
+                            <option value="5.0">Speed: 5.0x</option>
+                            <option value="10.0">Speed: 10.0x</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!--<div id="filters">
-            <select id="camera-select">
-                <option selected disabled>Loading...</option>
-            </select>
-            <input type="date" id="date-select">
-        </div>
-
-        <div id="recordings"></div>
-
-        <div id="video-container">
-            <video id="video-view" controls muted></video>
-        </div>-->
 
         <script src="assets/main.js"></script>
     </body>
