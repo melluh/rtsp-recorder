@@ -11,16 +11,9 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import com.melluh.rtsprecorder.http.RecordingsRoute;
-import com.melluh.rtsprecorder.http.StatusRoute;
+import com.melluh.rtsprecorder.http.WebServer;
 import com.melluh.rtsprecorder.task.CleanupRecordingsTask;
 import com.melluh.rtsprecorder.task.MoveRecordingsTask;
-import com.melluh.rtsprecorder.task.WatchdogTask;
-
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.StaticHandler;
 
 public class RtspRecorder {
 
@@ -36,6 +29,7 @@ public class RtspRecorder {
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
 	private Database database;
+	private WebServer webServer;
 	
 	private void start() {
 		LOGGER.info("Starting rtsp-recorder...");
@@ -54,25 +48,16 @@ public class RtspRecorder {
 		this.database = new Database();
 		database.connect();
 		
-		Vertx vertx = Vertx.vertx();
-		HttpServer server = vertx.createHttpServer();
-		Router router = Router.router(vertx);
-		
-		router.get().handler(StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false));
-		router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
-		router.get("/api/recordings").blockingHandler(new RecordingsRoute());
-		router.get("/api/status").handler(new StatusRoute());
-		
-		server.requestHandler(router).listen(configHandler.getWebPort());
-		LOGGER.info("Web server listening on port " + server.actualPort());
+		this.webServer = new WebServer();
+		webServer.start();
 		
 		LOGGER.info("Starting FFmpeg processes...");
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-		cameraRegistry.getCameras().forEach(Camera::startProcess);
+		//cameraRegistry.getCameras().forEach(Camera::startProcess);
 		LOGGER.info("FFmpeg processed started.");
 		
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
+		//executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
 		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
 		executor.scheduleAtFixedRate(new CleanupRecordingsTask(), 0, 30, TimeUnit.MINUTES);
 		LOGGER.info("Tasks initialized.");

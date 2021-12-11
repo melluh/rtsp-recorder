@@ -4,7 +4,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import io.vertx.core.json.JsonObject;
+import org.json.JSONObject;
 
 public class Recording {
 
@@ -24,8 +24,8 @@ public class Recording {
 		return new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), filePath);
 	}
 	
-	public JsonObject toJson() {
-		return new JsonObject()
+	public JSONObject toJson() {
+		return new JSONObject()
 				.put("filePath", filePath)
 				.put("cameraName", cameraName)
 				.put("startTime", startTime.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME))

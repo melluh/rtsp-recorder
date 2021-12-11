@@ -2,26 +2,23 @@ package com.melluh.rtsprecorder.http;
 
 import java.io.File;
 
+import org.json.JSONObject;
+
 import com.melluh.rtsprecorder.Camera;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
+import com.melluh.simplehttpserver.Request;
+import com.melluh.simplehttpserver.protocol.MimeType;
+import com.melluh.simplehttpserver.protocol.Status;
+import com.melluh.simplehttpserver.response.Response;
 
-import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
+public class StatusRoute {
 
-public class StatusRoute implements Handler<RoutingContext> {
-
-	@Override
-	public void handle(RoutingContext ctx) {
-		JsonObject json = new JsonObject();
-		json.put("diskUsage", FormatUtil.readableFileSize(FileUtil.getFolderSize(new File("recordings"))));
-		
-		JsonObject camerasJson = new JsonObject();
-		json.put("cameras", camerasJson);
+	public static Response handle(Request req) {
+		JSONObject camerasJson = new JSONObject();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
-			JsonObject cameraJson = new JsonObject();
+			JSONObject cameraJson = new JSONObject();
 			cameraJson.put("fps", camera.getFps());
 			cameraJson.put("speed", camera.getSpeed());
 			cameraJson.put("isWorking", camera.isWorking());
@@ -30,7 +27,13 @@ public class StatusRoute implements Handler<RoutingContext> {
 			camerasJson.put(camera.getName(), cameraJson);
 		}
 		
-		ctx.json(json);
+		JSONObject json = new JSONObject()
+				.put("diskUsage", FormatUtil.readableFileSize(FileUtil.getFolderSize(new File("recordings"))))
+				.put("cameras", camerasJson);
+		
+		return new Response(Status.OK)
+				.contentType(MimeType.JSON)
+				.body(json.toString());
 	}
 	
 }

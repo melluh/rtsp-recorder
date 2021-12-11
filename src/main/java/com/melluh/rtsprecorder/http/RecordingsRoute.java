@@ -3,46 +3,51 @@ package com.melluh.rtsprecorder.http;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.melluh.rtsprecorder.Recording;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FormatUtil;
+import com.melluh.simplehttpserver.Request;
+import com.melluh.simplehttpserver.protocol.MimeType;
+import com.melluh.simplehttpserver.protocol.Status;
+import com.melluh.simplehttpserver.response.Response;
 
-import io.vertx.core.Handler;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
+public class RecordingsRoute {
 
-public class RecordingsRoute implements Handler<RoutingContext> {
-
-	@Override
-	public void handle(RoutingContext ctx) {
-		LocalDate date = FormatUtil.parseDate(ctx.queryParams().get("date"));
+	public static Response handle(Request req) {
+		LocalDate date = FormatUtil.parseDate(req.getQueryParam("date"));
 		if(date == null) {
-			ctx.response().setStatusCode(400).putHeader("Content-Type", "application/json").end(Json.encodeToBuffer(new JsonObject().put("success", false).put("message", "request is missing date")));
-			return;
+			return getErrorResponse(Status.BAD_REQUEST, "request is missing date");
 		}
 		
-		String cameraName = ctx.queryParams().get("camera");
+		String cameraName = req.getQueryParam("camera");
 		if(cameraName == null || cameraName.isEmpty()) {
-			ctx.response().setStatusCode(400).putHeader("Content-Type", "application/json").end(Json.encodeToBuffer(new JsonObject().put("success", false).put("message", "request is missing camera")));
-			return;
+			return getErrorResponse(Status.BAD_REQUEST, "request is missing camera");
 		}
 		
 		if(RtspRecorder.getInstance().getCameraRegistry().getCamera(cameraName) == null) {
-			ctx.response().setStatusCode(404).putHeader("Content-Type", "application/json").end(Json.encodeToBuffer(new JsonObject().put("success", false).put("message", "camera not found")));
-			return;
+			return getErrorResponse(Status.NOT_FOUND, "camera not found");
 		}
 		
 		List<Recording> recordings = RtspRecorder.getInstance().getDatabase().getRecordings(date, cameraName);
 		if(recordings == null) {
-			ctx.response().setStatusCode(500);
-			return;
+			return getErrorResponse(Status.INTERNAL_SERVER_ERROR, "An error occurred");
 		}
 		
-		JsonArray json = new JsonArray();
-		recordings.forEach(recording -> json.add(recording.toJson()));
-		ctx.json(json);
+		JSONArray json = new JSONArray();
+		recordings.forEach(recording -> json.put(recording.toJson()));
+		
+		return new Response(Status.OK)
+				.contentType(MimeType.JSON)
+				.body(json.toString());
+	}
+	
+	private static Response getErrorResponse(Status status, String msg) {
+		return new Response(status)
+				.contentType(MimeType.JSON)
+				.body(new JSONObject().put("success", false).put("message", "request is missing date").toString());
 	}
 
 }
