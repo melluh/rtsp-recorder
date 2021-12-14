@@ -18,7 +18,7 @@ public class WebServer {
 		webroot.mkdir();
 		
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
-		StaticFileRoute recordingsStatic = new StaticFileRoute(configHandler.getRecordingsFolder(), "/recordings/");
+		StaticFileRoute recordingsStatic = new StaticFileRoute(configHandler.getRecordingsFolder(), "/recordings/").downloadQuery(true);
 		StaticFileRoute webStatic = new StaticFileRoute(webroot, "/").serveIndex(true);
 		
 		try {
