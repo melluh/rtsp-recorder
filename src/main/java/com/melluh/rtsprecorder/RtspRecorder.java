@@ -14,6 +14,7 @@ import java.util.logging.SimpleFormatter;
 import com.melluh.rtsprecorder.http.WebServer;
 import com.melluh.rtsprecorder.task.CleanupRecordingsTask;
 import com.melluh.rtsprecorder.task.MoveRecordingsTask;
+import com.melluh.rtsprecorder.task.WatchdogTask;
 
 public class RtspRecorder {
 
@@ -53,11 +54,11 @@ public class RtspRecorder {
 		
 		LOGGER.info("Starting FFmpeg processes...");
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-		//cameraRegistry.getCameras().forEach(Camera::startProcess);
+		cameraRegistry.getCameras().forEach(camera -> camera.getProcess().start());
 		LOGGER.info("FFmpeg processed started.");
 		
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-		//executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
+		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
 		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
 		executor.scheduleAtFixedRate(new CleanupRecordingsTask(), 0, 30, TimeUnit.MINUTES);
 		LOGGER.info("Tasks initialized.");
@@ -68,7 +69,7 @@ public class RtspRecorder {
 		@Override
 		public void run() {
 			LOGGER.info("Stopping FFmpeg processes...");
-			cameraRegistry.getCameras().forEach(Camera::stopProcess);
+			cameraRegistry.getCameras().forEach(camera -> camera.getProcess().stop());
 			
 			LOGGER.info("Goodbye!");
 			CustomLogManager.resetFinally();

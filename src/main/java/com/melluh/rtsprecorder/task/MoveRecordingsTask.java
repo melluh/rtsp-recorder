@@ -17,9 +17,10 @@ public class MoveRecordingsTask implements Runnable {
 		File recordingsDir = configHandler.getRecordingsFolder();
 		File tempDir = configHandler.getTempRecordingsFolder();
 		
+		int deletedCount = 0;
 		for(File file : tempDir.listFiles()) {
 			String fileName = file.getName();
-			if(!file.isFile() || !fileName.endsWith(".mp4") || RtspRecorder.getInstance().getCameraRegistry().isInProgressFile(fileName))
+			if(!file.isFile() || !fileName.endsWith(".mp4") || RtspRecorder.getInstance().getCameraRegistry().isActiveFile(fileName))
 				continue;
 			
 			int seperatorIndex = fileName.indexOf('-');
@@ -47,7 +48,7 @@ public class MoveRecordingsTask implements Runnable {
 			
 			float duration = FileUtil.getRecordingDuration(file);
 			if(duration <= 0) {
-				RtspRecorder.LOGGER.warning("Failed to determine recording duration for " + fileName + " (probably corrupt), deleting file.");
+				deletedCount++;
 				this.delete(file);
 				continue;
 			}
@@ -63,6 +64,10 @@ public class MoveRecordingsTask implements Runnable {
 			if(!file.renameTo(newFile)) {
 				RtspRecorder.LOGGER.warning("Failed to move " + file.getAbsolutePath() + " to " + newFile.getAbsolutePath());
 			}
+		}
+		
+		if(deletedCount > 0) {
+			RtspRecorder.LOGGER.info("Deleted " + deletedCount + " corrupt/incomplete recordings");
 		}
 	}
 	

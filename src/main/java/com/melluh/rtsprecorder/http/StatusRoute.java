@@ -1,10 +1,9 @@
 package com.melluh.rtsprecorder.http;
 
-import java.io.File;
-
 import org.json.JSONObject;
 
 import com.melluh.rtsprecorder.Camera;
+import com.melluh.rtsprecorder.CameraProcess;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
@@ -18,17 +17,18 @@ public class StatusRoute {
 	public static Response handle(Request req) {
 		JSONObject camerasJson = new JSONObject();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
+			CameraProcess process = camera.getProcess();
 			JSONObject cameraJson = new JSONObject();
-			cameraJson.put("fps", camera.getFps());
-			cameraJson.put("speed", camera.getSpeed());
-			cameraJson.put("isWorking", camera.isWorking());
-			cameraJson.put("connectedSince", camera.getConnectedSince());
-			cameraJson.put("pid", camera.getPid());
+			cameraJson.put("status", process.getStatus());
+			cameraJson.put("statusSince", process.getStatusSince());
+			cameraJson.put("pid", process.getPid());
+			cameraJson.put("fps", process.getFps());
+			cameraJson.put("failedStarts", process.getFailedStarts());
 			camerasJson.put(camera.getName(), cameraJson);
 		}
 		
 		JSONObject json = new JSONObject()
-				.put("diskUsage", FormatUtil.readableFileSize(FileUtil.getFolderSize(new File("recordings"))))
+				.put("diskUsage", FormatUtil.readableFileSize(FileUtil.getFolderSize(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder())))
 				.put("cameras", camerasJson);
 		
 		return new Response(Status.OK)

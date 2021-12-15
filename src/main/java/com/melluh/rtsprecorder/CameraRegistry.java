@@ -2,6 +2,7 @@ package com.melluh.rtsprecorder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CameraRegistry {
 
@@ -9,7 +10,6 @@ public class CameraRegistry {
 	
 	public void registerCamera(Camera camera) {
 		cameras.add(camera);
-		RtspRecorder.LOGGER.info("Camera registered: " + camera.getName());
 	}
 	
 	public List<Camera> getCameras() {
@@ -29,9 +29,9 @@ public class CameraRegistry {
 		return null;
 	}
 	
-	public boolean isInProgressFile(String name) {
+	public boolean isActiveFile(String name) {
 		return cameras.stream()
-				.anyMatch(camera -> camera.getFileInProgress() != null && camera.getFileInProgress().equals(name));
+				.anyMatch(camera -> Objects.equals(camera.getProcess().getActiveFile(), name));
 	}
 	
 }
