@@ -3,12 +3,16 @@ package com.melluh.rtsprecorder;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.melluh.rtsprecorder.util.FormatUtil;
 
 public class CameraProcess {
 	
@@ -19,7 +23,7 @@ public class CameraProcess {
 	private Camera camera;
 	
 	private Process process;
-	private ProcessStatus status;
+	private volatile ProcessStatus status;
 	private boolean isRestarting;
 	
 	private long lastUpdate;
@@ -37,18 +41,46 @@ public class CameraProcess {
 	}
 	
 	public void restart() {
-		this.isRestarting = true;
-		this.stop(); // will restart process after it's stopped, because isRestarting=true
+		if(status != ProcessStatus.IDLE) {
+			this.isRestarting = true;
+			this.stop(); // will restart process after it's stopped, because isRestarting=true
+		} else {
+			this.start(); // skip stopping, because the process isn't running
+		}
+	}
+	
+	public void handleTimeout(long timePassed) {
+		if(status == ProcessStatus.STARTING) {
+			camera.log(Level.WARNING, "FFmpeg startup tiemd out after " + FormatUtil.formatTimeTook(timePassed));
+			
+			if(failedStarts == 5) {
+				this.failedStarts = 0;
+				this.retryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
+				camera.log(Level.WARNING, "FFmpeg startup timed out after " + FormatUtil.formatTimeTook(timePassed) + ". Failed to start 5 times, retrying in 2 minutes");
+				return;
+			}
+			
+			failedStarts++;
+			camera.log(Level.WARNING, "FFmpeg startup timed out after " + FormatUtil.formatTimeTook(timePassed) + ", retrying (failed starts: " + failedStarts + ")");
+			this.restart();
+			return;
+		}
+		
+		if(status == ProcessStatus.WORKING) {
+			camera.log(Level.WARNING, "FFmpeg timed out after " + FormatUtil.formatTimeTook(timePassed) + ", restarting");
+			this.restart();
+			return;
+		}
 	}
 	
 	public void start() {
 		if(status != ProcessStatus.IDLE) {
-			RtspRecorder.LOGGER.warning("Cannot start process for camera " + camera.getName() + ", status is " + status.name());
+			camera.log(Level.WARNING, "Cannot start FFmpeg, status is " + status.name());
 			return;
 		}
 		
 		if(process != null && process.isAlive()) {
-			RtspRecorder.LOGGER.warning("Cannot start process for camera " + camera.getName() + ", process already running");
+			camera.log(Level.WARNING, "Cannot start FFmpeg, already running");
 			return;
 		}
 		
@@ -63,10 +95,37 @@ public class CameraProcess {
 					.redirectErrorStream(true)
 					.start();
 			
-			new MonitorThread(process).start();
+			process.onExit()
+				.thenAccept(ph -> this.handleExit(ph.exitValue()));
+			
+			new LogReaderThread(process.getInputStream()).start();
 		} catch (IOException ex) {
-			RtspRecorder.LOGGER.severe("Failed to start FFmpeg process for camera " + camera.getName());
+			camera.log(Level.SEVERE, "Error while starting FFmpeg");
 			ex.printStackTrace();
+		}
+	}
+	
+	private void handleExit(long exitValue) {
+		ProcessStatus prevStatus = this.status;
+		
+		this.setStatus(ProcessStatus.IDLE);
+		this.process = null;
+		this.activeFile = null;
+		this.fps = 0;
+		
+		camera.log(Level.INFO, "FFMpeg quit with exit code " + exitValue + ", system status was " + prevStatus.name());
+		
+		if(prevStatus != ProcessStatus.STOPPING) {
+			camera.log(Level.WARNING, "Unexpected exit! Restarting process.");
+			RtspRecorder.getInstance().getThreadPool().submit(this::start);
+			return;
+		}
+		
+		// otherwise if the status was STOPPING and we were restarting
+		if(isRestarting) {
+			isRestarting = false;
+			RtspRecorder.getInstance().getThreadPool().submit(this::start);
+			return;
 		}
 	}
 	
@@ -78,23 +137,21 @@ public class CameraProcess {
 	
 	public void stop() {
 		if(status != ProcessStatus.STARTING && status != ProcessStatus.WORKING) {
-			RtspRecorder.LOGGER.warning("Cannot stop process for camera " + camera.getName() + ", status is " + status.name());
+			camera.log(Level.WARNING, "Cannot stop FFmpeg, status is " + status.name());
 			return;
 		}
 		
 		if(process == null || !process.isAlive()) {
-			RtspRecorder.LOGGER.warning("Cannot stop process for camera " + camera.getName() + ", process not running");
+			camera.log(Level.WARNING, "Cannot stop FFmpeg, not running");
 			this.setStatus(ProcessStatus.IDLE);
-			this.handleRestart();
 			return;
 		}
 		
-		boolean wasWorking = status == ProcessStatus.WORKING;
+		ProcessStatus prevStatus = this.status;
 		this.setStatus(ProcessStatus.STOPPING);
 		
 		// if the process was never working (so never writing to any files), just kill it right away
-		if(!wasWorking) {
-			failedStarts++;
+		if(prevStatus != ProcessStatus.WORKING) {
 			process.destroyForcibly();
 		} else {
 			try {
@@ -103,7 +160,7 @@ public class CameraProcess {
 				out.flush();
 				
 				if(!process.waitFor(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-					RtspRecorder.LOGGER.info("FFmpeg for camera " + camera.getName() + " did not exit gracefully within " + SHUTDOWN_TIMEOUT_SECONDS + " seconds, killing process");
+					camera.log(Level.INFO, "FFmpeg did not exit gracefully within " + SHUTDOWN_TIMEOUT_SECONDS + " seconds, killing process");
 					process.destroyForcibly();
 				}
 			} catch (IOException | InterruptedException ex) {
@@ -113,11 +170,7 @@ public class CameraProcess {
 			}
 		}
 		
-		process = null;
-		this.setStatus(ProcessStatus.IDLE);
-		this.resetAfterQuit();
-		this.handleRestart();
-		return;
+		// Status will be set to IDLE by handleExit()
 	}
 	
 	private void parseLog(String line) {
@@ -128,6 +181,7 @@ public class CameraProcess {
 				lastUpdate = System.currentTimeMillis();
 				
 				if(status == ProcessStatus.STARTING) {
+					camera.log(Level.INFO, "FFmpeg started successfully, took " + FormatUtil.formatTimeTook(System.currentTimeMillis() - statusSince));
 					this.setStatus(ProcessStatus.WORKING);
 					this.failedStarts = 0;
 				}
@@ -141,26 +195,13 @@ public class CameraProcess {
 		}
 	}
 	
-	private void handleRestart() {
-		// if restarting, well.. restart
-		if(isRestarting) {
-			isRestarting = false;
-			this.start();
-		}
-	}
-	
-	private void resetAfterQuit() {
-		this.activeFile = null;
-		this.fps = 0;
+	public Camera getCamera() {
+		return camera;
 	}
 	
 	private void setStatus(ProcessStatus status) {
 		this.status = status;
 		this.statusSince = System.currentTimeMillis();
-	}
-	
-	public Camera getCamera() {
-		return camera;
 	}
 	
 	public ProcessStatus getStatus() {
@@ -191,39 +232,27 @@ public class CameraProcess {
 		return fps;
 	}
 	
-	public void setRetryTime(long retryTime) {
-		this.retryTime = retryTime;
-	}
-	
 	public long getRetryTime() {
 		return retryTime;
 	}
 	
-	private class MonitorThread extends Thread {
+	private class LogReaderThread extends Thread {
 		
-		private Process process;
+		private InputStream in;
 		
-		public MonitorThread(Process process) {
-			super(camera.getName() + "-monitor");
-			this.process = process;
+		public LogReaderThread(InputStream in) {
+			this.in = in;
 		}
 		
 		@Override
 		public void run() {
-			try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+			try(BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 				String line;
 				while((line = reader.readLine()) != null) {
 					parseLog(line);
 				}
-				
-				if(status != ProcessStatus.STOPPING) {
-					RtspRecorder.LOGGER.warning("Process for camera " + camera.getName() + " exited unexpectedly, restarting process");
-					setStatus(ProcessStatus.IDLE);
-					resetAfterQuit();
-					CameraProcess.this.start();
-				}
 			} catch (IOException ex) {
-				RtspRecorder.LOGGER.severe("Failed to read log output from FFmpeg process for camera " + camera.getName());
+				camera.log(Level.SEVERE, "Error while reading FFmpeg log output");
 				ex.printStackTrace();
 			}
 		}
@@ -232,7 +261,7 @@ public class CameraProcess {
 	
 	public static enum ProcessStatus {
 		
-		IDLE, // Pre-startup, or after having shut down
+		IDLE, // Pre-startup, or after having shut down - process not running
 		STARTING, // Starting up (process started but first update not received)
 		WORKING, // Working, receiving updates
 		STOPPING // Exiting

@@ -52,7 +52,7 @@ public class ConfigHandler {
 						return false;
 					}
 					
-					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.optLong("timeout_ms", 10000L));
+					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.optLong("timeout_ms", 10000L), jsonCamera.optLong("start_timeout_ms", 30000L));
 					RtspRecorder.getInstance().getCameraRegistry().registerCamera(camera);
 				}
 			}

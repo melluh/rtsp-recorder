@@ -71,4 +71,9 @@ public class FormatUtil {
 		return time.format(DateTimeFormatter.ofPattern("HH.mm.ss"));
 	}
 	
+	public static String formatTimeTook(long millis) {
+		float seconds = Math.max((float) millis / 1000.0f, 0.0f);
+		return String.format("%.02f", seconds) + "s";
+	}
+	
 }
