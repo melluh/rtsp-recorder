@@ -15,7 +15,7 @@ public class CleanupRecordingsTask implements Runnable {
 	@Override
 	public void run() {
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
-		long maxSize = (long) configHandler.getRecordingsMaxSize() * 1073741824L;
+		long maxSize = configHandler.getRecordingsMaxSize();
 		if(maxSize <= 0)
 			return;
 		
@@ -23,7 +23,7 @@ public class CleanupRecordingsTask implements Runnable {
 		if(maxSize > folderSize)
 			return;
 		
-		long targetSize = Math.min(maxSize - (configHandler.getRecordingsMaxSizeMargin() * 1073741824L), maxSize);
+		long targetSize = Math.min(maxSize - configHandler.getRecordingsMaxSizeMargin(), maxSize);
 		if(targetSize < 0)
 			targetSize = 0;
 		

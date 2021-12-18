@@ -109,12 +109,14 @@ public class ConfigHandler {
 		return recordingsInterval;
 	}
 	
-	public int getRecordingsMaxSize() {
-		return recordingsMaxSize;
+	public long getRecordingsMaxSize() {
+		// convert gb -> bytes
+		return recordingsMaxSize * 1073741824L;
 	}
 	
-	public int getRecordingsMaxSizeMargin() {
-		return recordingsMaxSizeMargin;
+	public long getRecordingsMaxSizeMargin() {
+		// convert gb -> bytes
+		return recordingsMaxSizeMargin * 1073741824L;
 	}
 	
 	private File ensureDir(File dir) {

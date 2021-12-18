@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import com.melluh.rtsprecorder.Camera;
 import com.melluh.rtsprecorder.CameraProcess;
+import com.melluh.rtsprecorder.ConfigHandler;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
@@ -18,17 +19,24 @@ public class StatusRoute {
 		JSONObject camerasJson = new JSONObject();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
 			CameraProcess process = camera.getProcess();
-			JSONObject cameraJson = new JSONObject();
-			cameraJson.put("status", process.getStatus());
-			cameraJson.put("statusSince", process.getStatusSince());
-			cameraJson.put("pid", process.getPid());
-			cameraJson.put("fps", process.getFps());
-			cameraJson.put("failedStarts", process.getFailedStarts());
+			JSONObject cameraJson = new JSONObject()
+					.put("status", process.getStatus())
+					.put("statusSince", process.getStatusSince())
+					.put("pid", process.getPid())
+					.put("fps", process.getFps())
+					.put("failedStarts", process.getFailedStarts());
 			camerasJson.put(camera.getName(), cameraJson);
 		}
 		
+		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
+		long recordingsSize = FileUtil.getFolderSize(configHandler.getRecordingsFolder());
+		long maxSize = configHandler.getRecordingsMaxSize();
+		float percentage = Math.min(((float) recordingsSize / (float) maxSize) * 100.0f, 100);
+		
 		JSONObject json = new JSONObject()
-				.put("diskUsage", FormatUtil.readableFileSize(FileUtil.getFolderSize(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder())))
+				.put("diskUsage", new JSONObject()
+						.put("readable", FormatUtil.readableFileSize(recordingsSize))
+						.put("percentage", String.format("%.1f", percentage) + "%"))
 				.put("cameras", camerasJson);
 		
 		return new Response(Status.OK)

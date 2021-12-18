@@ -67,7 +67,7 @@ public class MoveRecordingsTask implements Runnable {
 		}
 		
 		if(deletedCount > 0) {
-			RtspRecorder.LOGGER.info("Deleted " + deletedCount + " corrupt/incomplete recordings");
+			RtspRecorder.LOGGER.info("Deleted " + deletedCount + " corrupt/incomplete recording(s)");
 		}
 	}
 	
