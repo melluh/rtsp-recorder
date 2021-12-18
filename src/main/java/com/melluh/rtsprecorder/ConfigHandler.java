@@ -16,6 +16,7 @@ public class ConfigHandler {
 	private File recordingsFolder;
 	private int recordingsInterval;
 	private int recordingsMaxSize;
+	private int recordingsMaxSizeMargin;
 	
 	public boolean load() {
 		File file = new File(FILENAME);
@@ -32,6 +33,7 @@ public class ConfigHandler {
 			this.recordingsFolder = new File(this.getString(json, "recordings.location", "recordings"));
 			this.recordingsInterval = this.getInt(json, "recordings.interval", 600);
 			this.recordingsMaxSize = this.getInt(json, "recordings.max_size_gb", -1);
+			this.recordingsMaxSizeMargin = this.getInt(json, "recordings.max_size_margin_gb", 10);
 			
 			JSONArray jsonCameras = json.optJSONArray("cameras");
 			if(jsonCameras != null) {
@@ -109,6 +111,10 @@ public class ConfigHandler {
 	
 	public int getRecordingsMaxSize() {
 		return recordingsMaxSize;
+	}
+	
+	public int getRecordingsMaxSizeMargin() {
+		return recordingsMaxSizeMargin;
 	}
 	
 	private File ensureDir(File dir) {

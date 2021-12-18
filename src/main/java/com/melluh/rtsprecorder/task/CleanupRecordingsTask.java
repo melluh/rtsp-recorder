@@ -23,11 +23,15 @@ public class CleanupRecordingsTask implements Runnable {
 		if(maxSize > folderSize)
 			return;
 		
-		RtspRecorder.LOGGER.info("Recordings folder is too large, cleaning up recordings (" + FormatUtil.readableFileSize(folderSize) + "/" + FormatUtil.readableFileSize(maxSize) + ")");
+		long targetSize = Math.min(maxSize - (configHandler.getRecordingsMaxSizeMargin() * 1073741824L), maxSize);
+		if(targetSize < 0)
+			targetSize = 0;
+		
+		RtspRecorder.LOGGER.info("Recordings folder is too large, cleaning up recordings (" + FormatUtil.readableFileSize(folderSize) + "/" + FormatUtil.readableFileSize(maxSize) + ") - target is " + FormatUtil.readableFileSize(targetSize));
 		int numRemoved = 0;
 		
 		Database database = RtspRecorder.getInstance().getDatabase();
-		while(maxSize <= folderSize) {
+		while(targetSize <= folderSize) {
 			List<Recording> recordings = database.getOldestRecordings(10);
 			if(recordings.isEmpty())
 				break;
@@ -51,7 +55,7 @@ public class CleanupRecordingsTask implements Runnable {
 				numRemoved++;
 				
 				folderSize -= fileSize;
-				if(maxSize > folderSize)
+				if(targetSize > folderSize)
 					break;
 			}
 		}
