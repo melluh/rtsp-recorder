@@ -11,6 +11,7 @@ import com.melluh.simplehttpserver.Request;
 import com.melluh.simplehttpserver.protocol.MimeType;
 import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
+import org.tinylog.Logger;
 
 public class StaticFileRoute {
 
@@ -67,7 +68,7 @@ public class StaticFileRoute {
 			
 			return resp;
 		} catch (IOException ex) {
-			RtspRecorder.LOGGER.log(Level.SEVERE, "Failed to serve static file " + file.getName(), ex);
+			Logger.error(ex, "Failed to serve static file {}", file.getName());
 			return new Response(Status.INTERNAL_SERVER_ERROR);
 		}
 	}

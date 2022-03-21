@@ -8,6 +8,7 @@ import com.melluh.rtsprecorder.Recording;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
+import org.tinylog.Logger;
 
 public class MoveRecordingsTask implements Runnable {
 
@@ -25,7 +26,7 @@ public class MoveRecordingsTask implements Runnable {
 			
 			int seperatorIndex = fileName.indexOf('-');
 			if(seperatorIndex == -1) {
-				RtspRecorder.LOGGER.warning("Invalid filename " + fileName + ", deleting file.");
+				Logger.warn("Invalid filename {}, deleting file.", fileName);
 				this.delete(file);
 				continue;
 			}
@@ -34,14 +35,14 @@ public class MoveRecordingsTask implements Runnable {
 			String dateTimeStr = fileName.substring(seperatorIndex + 1, fileName.lastIndexOf('.'));
 			
 			if(RtspRecorder.getInstance().getCameraRegistry().getCamera(cameraName) == null) {
-				RtspRecorder.LOGGER.warning("Unknown camera '" + cameraName + "', deleting file.");
+				Logger.warn("Unknown camera '{}', deleting file.", cameraName);
 				this.delete(file);
 				continue;
 			}
 			
 			LocalDateTime startTime = FileUtil.parseFileDateTime(dateTimeStr);
 			if(startTime == null) {
-				RtspRecorder.LOGGER.warning("Invalid filename " + fileName + ", deleting file.");
+				Logger.warn("Invalid filename {}, deleting file.", fileName);
 				this.delete(file);
 				continue;
 			}
@@ -62,18 +63,18 @@ public class MoveRecordingsTask implements Runnable {
 			newFile.getParentFile().mkdirs();
 			
 			if(!file.renameTo(newFile)) {
-				RtspRecorder.LOGGER.warning("Failed to move " + file.getAbsolutePath() + " to " + newFile.getAbsolutePath());
+				Logger.warn("Failed to move {} to {}", file.getAbsolutePath(), newFile.getAbsolutePath());
 			}
 		}
 		
 		if(deletedCount > 0) {
-			RtspRecorder.LOGGER.info("Deleted " + deletedCount + " corrupt/incomplete recording(s)");
+			Logger.info("Deleted {} corrupt/incomplete recording(s)", deletedCount);
 		}
 	}
 	
 	private void delete(File file) {
 		if(!file.delete())
-			RtspRecorder.LOGGER.warning("Failed to delete " + file.getName());
+			Logger.warn("Failed to delete {}", file.getName());
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.melluh.rtsprecorder;
 
-import java.util.logging.Level;
+import org.tinylog.Logger;
+import org.tinylog.TaggedLogger;
 
 public class Camera {
 	
@@ -18,9 +19,17 @@ public class Camera {
 		this.startTimeout = startTimeout;
 		this.process = new CameraProcess(this);
 	}
-	
-	public void log(Level level, String msg) {
-		RtspRecorder.LOGGER.log(level, name + ": " + msg);
+
+	public void info(String msg, Object... args) {
+		Logger.info(this.name + ": " + msg, args);
+	}
+
+	public void warn(String msg, Object... args) {
+		Logger.warn(this.name + ": " + msg, args);
+	}
+
+	public void error(Throwable ex, String msg, Object... args) {
+		Logger.error(ex, this.name + ": " + msg, args);
 	}
 	
 	public CameraProcess getProcess() {

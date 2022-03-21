@@ -10,6 +10,7 @@ import com.melluh.simplehttpserver.HttpServer;
 import com.melluh.simplehttpserver.Request;
 import com.melluh.simplehttpserver.RequestHandler;
 import com.melluh.simplehttpserver.response.Response;
+import org.tinylog.Logger;
 
 public class WebServer {
 	
@@ -42,10 +43,10 @@ public class WebServer {
 					}
 				})
 				.start();
-			
-			RtspRecorder.LOGGER.info("Web server listening on port " + configHandler.getWebPort());
+
+			Logger.info("Web server listening on port {}", configHandler.getWebPort());
 		} catch (IOException ex) {
-			RtspRecorder.LOGGER.log(Level.SEVERE, "Failed to start web server", ex);
+			Logger.error(ex, "Failed to start web server");
 		}
 		
 		//router.get().handler(StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false));

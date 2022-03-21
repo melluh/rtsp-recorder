@@ -9,6 +9,7 @@ import com.melluh.rtsprecorder.Recording;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FileUtil;
 import com.melluh.rtsprecorder.util.FormatUtil;
+import org.tinylog.Logger;
 
 public class CleanupRecordingsTask implements Runnable {
 
@@ -26,8 +27,8 @@ public class CleanupRecordingsTask implements Runnable {
 		long targetSize = Math.min(maxSize - configHandler.getRecordingsMaxSizeMargin(), maxSize);
 		if(targetSize < 0)
 			targetSize = 0;
-		
-		RtspRecorder.LOGGER.info("Recordings folder is too large, cleaning up recordings (" + FormatUtil.readableFileSize(folderSize) + "/" + FormatUtil.readableFileSize(maxSize) + ") - target is " + FormatUtil.readableFileSize(targetSize));
+
+		Logger.info("Recordings folder is too large, cleaning up recordings ({}/{}) - target is {}", FormatUtil.readableFileSize(folderSize), FormatUtil.readableFileSize(maxSize), FormatUtil.readableFileSize(targetSize));
 		int numRemoved = 0;
 		
 		Database database = RtspRecorder.getInstance().getDatabase();
@@ -39,7 +40,7 @@ public class CleanupRecordingsTask implements Runnable {
 			for(Recording recording : recordings) {
 				File file = recording.getFile();
 				if(!file.exists()) {
-					RtspRecorder.LOGGER.warning("Invalid recording '" + recording.getFilePath() + "', file doesn't exist - removing from database");
+					Logger.warn("Invalid recording '{}', file doesn't exist - removing from  database");
 					database.removeRecording(recording.getFilePath());
 					continue;
 				}
@@ -47,7 +48,7 @@ public class CleanupRecordingsTask implements Runnable {
 				long fileSize = file.length();
 				
 				if(!file.delete()) {
-					RtspRecorder.LOGGER.warning("Failed to delete recording '" + recording.getFilePath() + "'");
+					Logger.warn("Failed to delete recording '{}'", recording.getFilePath());
 					continue;
 				}
 				
@@ -59,8 +60,8 @@ public class CleanupRecordingsTask implements Runnable {
 					break;
 			}
 		}
-		
-		RtspRecorder.LOGGER.info(numRemoved + " files deleted, folder size now " + FormatUtil.readableFileSize(folderSize));
+
+		Logger.info("{} files deleted, folder size now {}", numRemoved, FormatUtil.readableFileSize(folderSize));
 	}
 
 }

@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.tinylog.Logger;
 
 public class ConfigHandler {
 	
@@ -21,7 +22,7 @@ public class ConfigHandler {
 	public boolean load() {
 		File file = new File(FILENAME);
 		if(!file.exists()) {
-			RtspRecorder.LOGGER.severe(FILENAME + " is missing");
+			Logger.error("{} is missing", FILENAME);
 			return false;
 		}
 		
@@ -42,13 +43,13 @@ public class ConfigHandler {
 					
 					String name = jsonCamera.getString("name");
 					if(name == null) {
-						RtspRecorder.LOGGER.severe("Camera is missing value for 'name'");
+						Logger.error("Camera is missing value for 'name'");
 						return false;
 					}
 					
 					String url = jsonCamera.getString("url");
 					if(url == null) {
-						RtspRecorder.LOGGER.severe("Camera is missing value for 'url'");
+						Logger.error("Camera is missing value for 'url'");
 						return false;
 					}
 					
@@ -59,12 +60,10 @@ public class ConfigHandler {
 			
 			return true;
 		} catch (IOException ex) {
-			RtspRecorder.LOGGER.severe("Failed to read " + FILENAME);
-			ex.printStackTrace();
+			Logger.error(ex, "Failed to read {}", FILENAME);
 			return false;
 		} catch (JSONException ex) {
-			RtspRecorder.LOGGER.severe(FILENAME + " has malformed JSON.");
-			ex.printStackTrace();
+			Logger.error(ex, "{} has malformed JSON.", FILENAME);
 			return false;
 		}
 	}

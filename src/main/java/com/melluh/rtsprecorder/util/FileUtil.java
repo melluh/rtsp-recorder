@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.melluh.rtsprecorder.RtspRecorder;
+import org.tinylog.Logger;
 
 public class FileUtil {
 
@@ -20,7 +21,7 @@ public class FileUtil {
 		try {
 			return LocalDateTime.from(FORMATTER.parse(fileName));
 		} catch (DateTimeException ex) {
-			RtspRecorder.LOGGER.warning("Failed to parse " + fileName);
+			Logger.warn("Failed to parse {}", fileName);
 			return null;
 		}
 	}
@@ -40,9 +41,8 @@ public class FileUtil {
 			String line = reader.readLine();
 			
 			return line != null ? Float.parseFloat(line) : -1;
-		} catch (IOException | InterruptedException e) {
-			RtspRecorder.LOGGER.severe("Failed to determine recording duration for " + file.getName());
-			e.printStackTrace();
+		} catch (IOException | InterruptedException ex) {
+			Logger.error(ex, "Failed to determine recording duration for {}", file.getName());
 			return -1;
 		}
 	}
