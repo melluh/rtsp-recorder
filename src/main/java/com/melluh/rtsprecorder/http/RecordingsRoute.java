@@ -3,6 +3,7 @@ package com.melluh.rtsprecorder.http;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.melluh.simplehttpserver.router.Route;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -14,9 +15,10 @@ import com.melluh.simplehttpserver.protocol.MimeType;
 import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
 
-public class RecordingsRoute {
+public class RecordingsRoute implements Route {
 
-	public static Response handle(Request req) {
+	@Override
+	public Response serve(Request req) {
 		LocalDate date = FormatUtil.parseDate(req.getQueryParam("date"));
 		if(date == null) {
 			return getErrorResponse(Status.BAD_REQUEST, "request is missing date");

@@ -3,17 +3,17 @@ package com.melluh.rtsprecorder.http;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.logging.Level;
 
-import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.simplehttpserver.HttpUtils;
 import com.melluh.simplehttpserver.Request;
+import com.melluh.simplehttpserver.RequestHandler;
 import com.melluh.simplehttpserver.protocol.MimeType;
 import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
+import com.melluh.simplehttpserver.router.Route;
 import org.tinylog.Logger;
 
-public class StaticFileRoute {
+public class StaticFileHandler implements Route {
 
 	private static final String INDEX_FILE = "index.html";
 	
@@ -21,27 +21,28 @@ public class StaticFileRoute {
 	private String baseUri;
 	private boolean serveIndex, downloadQuery;
 	
-	public StaticFileRoute(File folder) {
+	public StaticFileHandler(File folder) {
 		this.folder = folder;
 		this.baseUri = "/";
 	}
 	
-	public StaticFileRoute(File folder, String baseUri) {
+	public StaticFileHandler(File folder, String baseUri) {
 		this.folder = folder;
 		this.baseUri = baseUri;
 	}
 	
-	public StaticFileRoute serveIndex(boolean serveIndex) {
+	public StaticFileHandler serveIndex(boolean serveIndex) {
 		this.serveIndex = serveIndex;
 		return this;
 	}
 	
-	public StaticFileRoute downloadQuery(boolean downloadQuery) {
+	public StaticFileHandler downloadQuery(boolean downloadQuery) {
 		this.downloadQuery = downloadQuery;
 		return this;
 	}
-	
-	public Response handle(Request req) {
+
+	@Override
+	public Response serve(Request req) {
 		if(!req.getLocation().startsWith(baseUri))
 			return new Response(Status.NOT_FOUND);
 		

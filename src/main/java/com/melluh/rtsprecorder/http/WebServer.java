@@ -2,7 +2,6 @@ package com.melluh.rtsprecorder.http;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 
 import com.melluh.rtsprecorder.ConfigHandler;
 import com.melluh.rtsprecorder.RtspRecorder;
@@ -10,6 +9,7 @@ import com.melluh.simplehttpserver.HttpServer;
 import com.melluh.simplehttpserver.Request;
 import com.melluh.simplehttpserver.RequestHandler;
 import com.melluh.simplehttpserver.response.Response;
+import com.melluh.simplehttpserver.router.Router;
 import org.tinylog.Logger;
 
 public class WebServer {
@@ -19,30 +19,17 @@ public class WebServer {
 		webroot.mkdir();
 		
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
-		StaticFileRoute recordingsStatic = new StaticFileRoute(configHandler.getRecordingsFolder(), "/recordings/").downloadQuery(true);
-		StaticFileRoute webStatic = new StaticFileRoute(webroot, "/").serveIndex(true);
+		StaticFileHandler recordingsStatic = new StaticFileHandler(configHandler.getRecordingsFolder(), "/recordings/").downloadQuery(true);
+		StaticFileHandler webStatic = new StaticFileHandler(webroot, "/").serveIndex(true);
 		
 		try {
 			new HttpServer(configHandler.getWebPort())
-				.requestHandler(new RequestHandler() {
-					@Override
-					public Response handle(Request req) {
-						if(req.getLocation().equals("/api/status")) {
-							return StatusRoute.handle(req);
-						}
-						
-						if(req.getLocation().equals("/api/recordings")) {
-							return RecordingsRoute.handle(req);
-						}
-						
-						if(req.getLocation().startsWith("/recordings/")) {
-							return recordingsStatic.handle(req);
-						}
-						
-						return webStatic.handle(req);
-					}
-				})
-				.start();
+					.use(webStatic)
+					.use(new Router()
+							.get("/api/status", new StatusRoute())
+							.get("/api/recordings", new RecordingsRoute())
+							.get("/recordings/*", recordingsStatic))
+					.start();
 
 			Logger.info("Web server listening on port {}", configHandler.getWebPort());
 		} catch (IOException ex) {

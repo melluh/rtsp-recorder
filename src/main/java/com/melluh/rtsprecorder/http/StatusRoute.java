@@ -1,5 +1,6 @@
 package com.melluh.rtsprecorder.http;
 
+import com.melluh.simplehttpserver.router.Route;
 import org.json.JSONObject;
 
 import com.melluh.rtsprecorder.Camera;
@@ -13,9 +14,10 @@ import com.melluh.simplehttpserver.protocol.MimeType;
 import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
 
-public class StatusRoute {
+public class StatusRoute implements Route {
 
-	public static Response handle(Request req) {
+	@Override
+	public Response serve(Request request) {
 		JSONObject camerasJson = new JSONObject();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
 			CameraProcess process = camera.getProcess();
@@ -27,18 +29,18 @@ public class StatusRoute {
 					.put("failedStarts", process.getFailedStarts());
 			camerasJson.put(camera.getName(), cameraJson);
 		}
-		
+
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
 		long recordingsSize = FileUtil.getFolderSize(configHandler.getRecordingsFolder());
 		long maxSize = configHandler.getRecordingsMaxSize();
 		float percentage = Math.min(((float) recordingsSize / (float) maxSize) * 100.0f, 100);
-		
+
 		JSONObject json = new JSONObject()
 				.put("diskUsage", new JSONObject()
 						.put("readable", FormatUtil.readableFileSize(recordingsSize))
 						.put("percentage", String.format("%.1f", percentage) + "%"))
 				.put("cameras", camerasJson);
-		
+
 		return new Response(Status.OK)
 				.contentType(MimeType.JSON)
 				.body(json.toString());

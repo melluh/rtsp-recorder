@@ -1,7 +1,6 @@
 package com.melluh.rtsprecorder;
 
 import org.tinylog.Logger;
-import org.tinylog.TaggedLogger;
 
 public class Camera {
 	
