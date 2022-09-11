@@ -22,8 +22,7 @@ public class RtspRecorder {
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
 	private Database database;
-	private WebServer webServer;
-	
+
 	private void start() {
 		Logger.info("Starting rtsp-recorder...");
 		
@@ -40,8 +39,8 @@ public class RtspRecorder {
 		
 		this.database = new Database();
 		database.connect();
-		
-		this.webServer = new WebServer();
+
+		WebServer webServer = new WebServer();
 		webServer.start();
 
 		Logger.info("Starting FFmpeg processes...");

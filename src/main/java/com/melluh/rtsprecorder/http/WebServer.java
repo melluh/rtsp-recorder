@@ -3,11 +3,15 @@ package com.melluh.rtsprecorder.http;
 import java.io.File;
 import java.io.IOException;
 
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonWriter;
 import com.melluh.rtsprecorder.ConfigHandler;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.simplehttpserver.HttpServer;
 import com.melluh.simplehttpserver.Request;
 import com.melluh.simplehttpserver.RequestHandler;
+import com.melluh.simplehttpserver.protocol.MimeType;
+import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
 import com.melluh.simplehttpserver.router.Router;
 import org.tinylog.Logger;
@@ -38,6 +42,12 @@ public class WebServer {
 		
 		//router.get().handler(StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false));
 		//router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
+	}
+
+	public static Response jsonResponse(Status status, Object json) {
+		return new Response(status)
+				.contentType(MimeType.JSON)
+				.body(JsonWriter.string(json));
 	}
 	
 }

@@ -4,7 +4,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.json.JSONObject;
+import com.grack.nanojson.JsonObject;
 
 public class Recording {
 
@@ -24,12 +24,13 @@ public class Recording {
 		return new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), filePath);
 	}
 	
-	public JSONObject toJson() {
-		return new JSONObject()
-				.put("filePath", filePath)
-				.put("cameraName", cameraName)
-				.put("startTime", startTime.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME))
-				.put("endTime", endTime.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME));
+	public JsonObject toJson() {
+		return JsonObject.builder()
+				.value("filePath", filePath)
+				.value("cameraName", cameraName)
+				.value("startTime", startTime.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME))
+				.value("endTime", endTime.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME))
+				.done();
 	}
 	
 	public String getFilePath() {

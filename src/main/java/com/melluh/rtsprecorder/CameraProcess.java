@@ -8,20 +8,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.melluh.rtsprecorder.util.FormatUtil;
-import org.tinylog.Logger;
 
 public class CameraProcess {
 	
-	private static final String COMMAND_FORMAT = "ffmpeg -hide_banner -i %input% -f segment -strftime 1 -segment_time 600 -segment_atclocktime 1 -segment_format mp4 -an -vcodec copy -reset_timestamps 1 -progress pipe:1 %file%";
+	private static final String COMMAND_FORMAT = "ffmpeg -hide_banner -i %input% -f segment -strftime 1 -segment_time %interval% -segment_atclocktime 1 -segment_format mp4 -an -vcodec copy -reset_timestamps 1 -progress pipe:1 %file%";
 	private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 	private static final Pattern OPENING_FOR_WRITING_PATTERN = Pattern.compile("Opening '(\\S+)' for writing");
 	
-	private Camera camera;
+	private final Camera camera;
 	
 	private Process process;
 	private volatile ProcessStatus status;
@@ -131,7 +129,8 @@ public class CameraProcess {
 	private String getCommand() {
 		return COMMAND_FORMAT
 				.replace("%input%", camera.getURL())
-				.replace("%file%", camera.getName() + "-%Y-%m-%d-%H.%M.%S.mp4");
+				.replace("%file%", camera.getName() + "-%Y-%m-%d-%H.%M.%S.mp4")
+				.replace("%interval%", String.valueOf(RtspRecorder.getInstance().getConfigHandler().getRecordingsInterval()));
 	}
 	
 	public void stop() {

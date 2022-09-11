@@ -17,15 +17,10 @@ public class StaticFileHandler implements Route {
 
 	private static final String INDEX_FILE = "index.html";
 	
-	private File folder;
-	private String baseUri;
+	private final File folder;
+	private final String baseUri;
 	private boolean serveIndex, downloadQuery;
-	
-	public StaticFileHandler(File folder) {
-		this.folder = folder;
-		this.baseUri = "/";
-	}
-	
+
 	public StaticFileHandler(File folder, String baseUri) {
 		this.folder = folder;
 		this.baseUri = baseUri;

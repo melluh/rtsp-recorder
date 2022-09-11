@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonParserException;
 import org.tinylog.Logger;
 
 public class ConfigHandler {
@@ -28,18 +29,18 @@ public class ConfigHandler {
 		
 		try {
 			String str = Files.readString(file.toPath());
-			JSONObject json = new JSONObject(str);
+			JsonObject json = JsonParser.object().from(str);
+
+			this.webPort = json.getObject("web").getInt("port", 8080);
+			this.recordingsFolder = new File(json.getObject("recordings").getString("location", "recordings"));
+			this.recordingsInterval = json.getObject("recordings").getInt("interval", 600);
+			this.recordingsMaxSize = json.getObject("recordings").getInt("max_size_gb", -1);
+			this.recordingsMaxSizeMargin = json.getObject("recordings").getInt("max_size_margin_gb", 10);
 			
-			this.webPort = this.getInt(json, "web.port", 8080);
-			this.recordingsFolder = new File(this.getString(json, "recordings.location", "recordings"));
-			this.recordingsInterval = this.getInt(json, "recordings.interval", 600);
-			this.recordingsMaxSize = this.getInt(json, "recordings.max_size_gb", -1);
-			this.recordingsMaxSizeMargin = this.getInt(json, "recordings.max_size_margin_gb", 10);
-			
-			JSONArray jsonCameras = json.optJSONArray("cameras");
+			JsonArray jsonCameras = json.getArray("cameras");
 			if(jsonCameras != null) {
-				for(int i = 0; i < jsonCameras.length(); i++) {
-					JSONObject jsonCamera = jsonCameras.getJSONObject(i);
+				for(int i = 0; i < jsonCameras.size(); i++) {
+					JsonObject jsonCamera = jsonCameras.getObject(i);
 					
 					String name = jsonCamera.getString("name");
 					if(name == null) {
@@ -53,7 +54,7 @@ public class ConfigHandler {
 						return false;
 					}
 					
-					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.optLong("timeout_ms", 10000L), jsonCamera.optLong("start_timeout_ms", 30000L));
+					Camera camera = new Camera(name.toLowerCase(), url, jsonCamera.getLong("timeout_ms", 10000L), jsonCamera.getLong("start_timeout_ms", 30000L));
 					RtspRecorder.getInstance().getCameraRegistry().registerCamera(camera);
 				}
 			}
@@ -62,36 +63,12 @@ public class ConfigHandler {
 		} catch (IOException ex) {
 			Logger.error(ex, "Failed to read {}", FILENAME);
 			return false;
-		} catch (JSONException ex) {
+		} catch (JsonParserException ex) {
 			Logger.error(ex, "{} has malformed JSON.", FILENAME);
 			return false;
 		}
 	}
-	
-	private int getInt(JSONObject json, String key, int def) {
-		String[] parts = key.split("\\.");
-		
-		for(int i = 0; i < parts.length - 1; i++) {
-			json = json.optJSONObject(parts[i]);
-			if(json == null)
-				return def;
-		}
-		
-		return json.optInt(parts[parts.length - 1], def);
-	}
-	
-	private String getString(JSONObject json, String key, String def) {
-		String[] parts = key.split("\\.");
-		
-		for(int i = 0; i < parts.length - 1; i++) {
-			json = json.optJSONObject(parts[i]);
-			if(json == null)
-				return def;
-		}
-		
-		return json.optString(parts[parts.length - 1], def);
-	}
-	
+
 	public int getWebPort() {
 		return webPort;
 	}
