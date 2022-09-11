@@ -1,6 +1,7 @@
 package com.melluh.rtsprecorder;
 
 import java.io.File;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -8,10 +9,10 @@ import com.grack.nanojson.JsonObject;
 
 public class Recording {
 
-	private String filePath;
-	private String cameraName;
-	private LocalDateTime startTime;
-	private LocalDateTime endTime;
+	private final String filePath;
+	private final String cameraName;
+	private final LocalDateTime startTime;
+	private final LocalDateTime endTime;
 	
 	public Recording(String filePath, String cameraName, LocalDateTime startTime, LocalDateTime endTime) {
 		this.filePath = filePath;
@@ -47,6 +48,10 @@ public class Recording {
 	
 	public LocalDateTime getEndTime() {
 		return endTime;
+	}
+
+	public Duration getDuration() {
+		return Duration.between(startTime, endTime);
 	}
 	
 }

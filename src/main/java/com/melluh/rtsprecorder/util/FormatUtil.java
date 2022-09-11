@@ -3,6 +3,7 @@ package com.melluh.rtsprecorder.util;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -74,6 +75,10 @@ public class FormatUtil {
 	public static String formatTimeTook(long millis) {
 		float seconds = Math.max((float) millis / 1000.0f, 0.0f);
 		return String.format("%.02f", seconds) + "s";
+	}
+
+	public static String formatDuration(Duration duration) {
+		return String.format("%02d", duration.toHours()) + ":" + String.format("%02d", duration.toMinutesPart()) + ":" + String.format("%02d", duration.toSecondsPart());
 	}
 	
 }

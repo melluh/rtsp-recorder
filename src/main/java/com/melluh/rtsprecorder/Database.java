@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.melluh.rtsprecorder.util.FormatUtil;
@@ -53,6 +54,28 @@ public class Database {
 			
 			ResultSet result = prepStmt.executeQuery();
 			return this.getRecordingsList(result);
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+			return null;
+		}
+	}
+
+	public List<Recording> getRecordings(LocalDateTime from, LocalDateTime to, String cameraName) {
+		String fromStr = from.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+		String toStr = to.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+		try {
+			PreparedStatement prepStmt = conn.prepareStatement("SELECT * FROM recordings WHERE camera_name = ? AND ((start_time > ? AND end_time < ?) OR (start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) ORDER BY start_time ASC");
+			prepStmt.setString(1, cameraName);
+			prepStmt.setString(2, fromStr);
+			prepStmt.setString(3, toStr);
+			prepStmt.setString(4, fromStr);
+			prepStmt.setString(5, fromStr);
+			prepStmt.setString(6, toStr);
+			prepStmt.setString(7, toStr);
+
+			ResultSet resultSet = prepStmt.executeQuery();
+			return this.getRecordingsList(resultSet);
 		} catch (SQLException ex) {
 			ex.printStackTrace();
 			return null;

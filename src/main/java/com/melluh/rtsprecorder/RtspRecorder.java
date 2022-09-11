@@ -47,7 +47,7 @@ public class RtspRecorder {
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 		cameraRegistry.getCameras().forEach(camera -> camera.getProcess().start());
 		Logger.info("FFmpeg processed started.");
-		
+
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
 		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);

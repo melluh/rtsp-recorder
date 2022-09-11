@@ -43,7 +43,7 @@ public class CleanupRecordingsTask implements Runnable {
 			for(Recording recording : recordings) {
 				File file = recording.getFile();
 				if(!file.exists()) {
-					Logger.warn("Invalid recording '{}', file doesn't exist - removing from database");
+					Logger.warn("Invalid recording '{}', file doesn't exist - removing from database", recording.getFilePath());
 					database.removeRecording(recording.getFilePath());
 					continue;
 				}

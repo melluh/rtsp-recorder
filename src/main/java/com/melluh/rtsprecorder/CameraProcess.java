@@ -234,7 +234,7 @@ public class CameraProcess {
 	
 	private class LogReaderThread extends Thread {
 		
-		private InputStream in;
+		private final InputStream in;
 		
 		public LogReaderThread(InputStream in) {
 			this.in = in;

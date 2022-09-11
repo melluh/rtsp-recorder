@@ -32,7 +32,9 @@ public class WebServer {
 					.use(new Router()
 							.get("/api/status", new StatusRoute())
 							.get("/api/recordings", new RecordingsRoute())
-							.get("/recordings/*", recordingsStatic))
+							.get("/api/export", new ExportRoute())
+							.get("/recordings/*", recordingsStatic)
+					)
 					.start();
 
 			Logger.info("Web server listening on port {}", configHandler.getWebPort());
