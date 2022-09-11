@@ -1,7 +1,10 @@
 package com.melluh.rtsprecorder.task;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Objects;
 
 import com.melluh.rtsprecorder.ConfigHandler;
 import com.melluh.rtsprecorder.Database;
@@ -40,17 +43,13 @@ public class CleanupRecordingsTask implements Runnable {
 			for(Recording recording : recordings) {
 				File file = recording.getFile();
 				if(!file.exists()) {
-					Logger.warn("Invalid recording '{}', file doesn't exist - removing from  database");
+					Logger.warn("Invalid recording '{}', file doesn't exist - removing from database");
 					database.removeRecording(recording.getFilePath());
 					continue;
 				}
 				
 				long fileSize = file.length();
-				
-				if(!file.delete()) {
-					Logger.warn("Failed to delete recording '{}'", recording.getFilePath());
-					continue;
-				}
+				this.deleteFile(file);
 				
 				database.removeRecording(recording.getFilePath());
 				numRemoved++;
@@ -62,6 +61,22 @@ public class CleanupRecordingsTask implements Runnable {
 		}
 
 		Logger.info("{} files deleted, folder size now {}", numRemoved, FormatUtil.readableFileSize(folderSize));
+	}
+
+	private void deleteFile(File file) {
+		try {
+			Files.delete(file.toPath());
+			this.deleteFolderIfEmpty(file.getParentFile());
+			this.deleteFolderIfEmpty(file.getParentFile().getParentFile());
+		} catch (IOException ex) {
+			Logger.error(ex, "Failed to delete recording file");
+		}
+	}
+
+	private void deleteFolderIfEmpty(File folder) throws IOException {
+		if (folder.isDirectory() && Objects.requireNonNull(folder.listFiles()).length == 0) {
+			Files.delete(folder.toPath());
+		}
 	}
 
 }
