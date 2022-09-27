@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -15,7 +16,7 @@ import com.melluh.rtsprecorder.util.FormatUtil;
 
 public class CameraProcess {
 	
-	private static final String COMMAND_FORMAT = "ffmpeg -hide_banner -i %input% -f segment -strftime 1 -segment_time %interval% -segment_atclocktime 1 -segment_format mp4 -an -vcodec copy -reset_timestamps 1 -progress pipe:1 %file%";
+	private static final String COMMAND_FORMAT = "ffmpeg -hide_banner -i %input% -f segment -strftime 1 -segment_time %interval% -segment_atclocktime 1 -segment_format mp4 -an -vcodec copy -reset_timestamps 1 -progress pipe:1 -attempt_recovery 1 %file%";
 	private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 	private static final Pattern OPENING_FOR_WRITING_PATTERN = Pattern.compile("Opening '(\\S+)' for writing");
 	
@@ -24,14 +25,14 @@ public class CameraProcess {
 	private Process process;
 	private volatile ProcessStatus status;
 	private boolean isRestarting;
-	
+
+	private long lastTimeUs;
 	private long lastUpdate;
+	private String activeFile;
+
 	private long statusSince;
 	private int failedStarts;
 	private long retryTime;
-	
-	private String activeFile;
-	private double fps;
 	
 	public CameraProcess(Camera camera) {
 		Objects.requireNonNull(camera, "camera is missing");
@@ -64,9 +65,8 @@ public class CameraProcess {
 		}
 		
 		if(status == ProcessStatus.WORKING) {
-			camera.warn("FFmpeg timed out after {}, restarting", FormatUtil.formatTimeTook(timePassed));
+			camera.warn("FFmpeg has been stuck for {}, restarting", FormatUtil.formatTimeTook(timePassed));
 			this.restart();
-			return;
 		}
 	}
 	
@@ -86,7 +86,7 @@ public class CameraProcess {
 		
 		try {
 			File tempFolder = new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), "temp");
-			tempFolder.mkdirs();
+			Files.createDirectories(tempFolder.toPath());
 			
 			this.process = new ProcessBuilder(this.getCommand().split(" "))
 					.directory(tempFolder)
@@ -108,7 +108,7 @@ public class CameraProcess {
 		this.setStatus(ProcessStatus.IDLE);
 		this.process = null;
 		this.activeFile = null;
-		this.fps = 0;
+		this.lastTimeUs = 0;
 
 		camera.info("FFmpeg quit with exit code {}, status was {}", exitValue, prevStatus.name());
 		
@@ -122,7 +122,6 @@ public class CameraProcess {
 		if(isRestarting) {
 			isRestarting = false;
 			RtspRecorder.getInstance().getScheduler().schedule(this::start, 2, TimeUnit.SECONDS);
-			return;
 		}
 	}
 	
@@ -170,29 +169,24 @@ public class CameraProcess {
 	}
 	
 	private void parseLog(String line) {
-		if(line.startsWith("fps=")) {
-			fps = line.equals("fps=N/A") ? 0 : Double.parseDouble(line.substring("fps=".length()));
-			
-			if(fps > 0) {
-				lastUpdate = System.currentTimeMillis();
-				
-				if(status == ProcessStatus.STARTING) {
+		if (line.startsWith("out_time_us=")) {
+			long timeUs = Math.max(Long.parseLong(line.substring("out_time_us=".length())), 0);
+			if (timeUs > lastTimeUs) {
+				this.lastTimeUs = timeUs;
+				this.lastUpdate = System.currentTimeMillis();
+
+				if (status == ProcessStatus.STARTING) {
 					camera.info("FFmpeg started successfully, took {}", FormatUtil.formatTimeTook(System.currentTimeMillis() - statusSince));
 					this.setStatus(ProcessStatus.WORKING);
 					this.failedStarts = 0;
 				}
 			}
 		}
-		
+
 		Matcher matcher = OPENING_FOR_WRITING_PATTERN.matcher(line);
 		if(matcher.find()) {
 			this.activeFile = matcher.group(1);
-			return;
 		}
-	}
-	
-	public Camera getCamera() {
-		return camera;
 	}
 	
 	private void setStatus(ProcessStatus status) {
@@ -222,10 +216,6 @@ public class CameraProcess {
 	
 	public long getLastUpdate() {
 		return lastUpdate;
-	}
-	
-	public double getFps() {
-		return fps;
 	}
 	
 	public long getRetryTime() {

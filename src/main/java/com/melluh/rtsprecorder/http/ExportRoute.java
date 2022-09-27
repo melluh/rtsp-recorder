@@ -66,15 +66,11 @@ public class ExportRoute implements Route {
                     .collect(Collectors.joining("\n"));
             Files.writeString(new File(directory, id + ".txt").toPath(), fileContents);
 
-            String command = "ffmpeg -hide_banner -ss " +
-                    FormatUtil.formatDuration(spliceStart) +
-                    " -to " +
-                    FormatUtil.formatDuration(spliceEnd) +
-                    " -f concat -safe 0 -i " +
-                    id +
-                    ".txt -c copy " +
-                    id +
-                    ".mp4";
+            String command = "ffmpeg -hide_banner -ss %start% -to %end% -f concat -safe 0 -i %id%.txt -c copy %id%.mp4"
+                    .replace("%id%", id)
+                    .replace("%start%", FormatUtil.formatDuration(spliceStart))
+                    .replace("%end%", FormatUtil.formatDuration(spliceEnd));
+            Logger.info(command);
 
             Process process = new ProcessBuilder(command.split(" "))
                     .directory(directory)

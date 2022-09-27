@@ -4,12 +4,12 @@ import org.tinylog.Logger;
 
 public class Camera {
 	
-	private String name;
-	private String url;
-	private long timeout;
-	private long startTimeout;
+	private final String name;
+	private final String url;
+	private final long timeout;
+	private final long startTimeout;
 	
-	private CameraProcess process;
+	private final CameraProcess process;
 	
 	public Camera(String name, String url, long timeout, long startTimeout) {
 		this.name = name;

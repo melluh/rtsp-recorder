@@ -12,23 +12,17 @@ public class WatchdogTask implements Runnable {
 		long currentTime = System.currentTimeMillis();
 		for(Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
 			CameraProcess process = camera.getProcess();
-			
-			if(process.getStatus() == ProcessStatus.STARTING) {
+
+			if (process.getStatus() == ProcessStatus.STARTING) {
 				long timePassed = currentTime - process.getStatusSince();
-				if(currentTime >= process.getRetryTime() && timePassed > camera.getStartTimeout()) {
+				if (currentTime >= process.getRetryTime() && timePassed > camera.getStartTimeout()) {
 					process.handleTimeout(timePassed);
 				}
-				
-				continue;
-			}
-			
-			if(process.getStatus() == ProcessStatus.WORKING) {
+			} else if (process.getStatus() == ProcessStatus.WORKING) {
 				long timePassed = currentTime - process.getLastUpdate();
-				if(timePassed > camera.getTimeout()) {
+				if (timePassed > camera.getTimeout()) {
 					process.handleTimeout(timePassed);
 				}
-				
-				continue;
 			}
 		}
 	}

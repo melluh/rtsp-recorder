@@ -21,11 +21,15 @@ public class StatusRoute implements Route {
 		for (Camera camera : RtspRecorder.getInstance().getCameraRegistry().getCameras()) {
 			CameraProcess process = camera.getProcess();
 			camerasJson.put(camera.getName(), JsonObject.builder()
-					.value("status", process.getStatus().name())
-					.value("statusSince", process.getStatusSince())
-					.value("pid", process.getPid())
-					.value("fps", process.getFps())
-					.value("failedStarts", process.getFailedStarts())
+					.object("process")
+						.value("status", process.getStatus().name())
+						.value("statusSince", process.getStatusSince())
+						.value("pid", process.getPid())
+						.value("failedStarts", process.getFailedStarts())
+						.value("lastUpdate", process.getLastUpdate())
+						.end()
+					.value("timeout_ms", camera.getTimeout())
+					.value("start_timeout_ms", camera.getStartTimeout())
 					.done());
 		}
 
