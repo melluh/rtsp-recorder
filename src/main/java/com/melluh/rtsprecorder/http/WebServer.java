@@ -2,6 +2,7 @@ package com.melluh.rtsprecorder.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonWriter;
@@ -20,8 +21,14 @@ public class WebServer {
 	
 	public void start() {
 		File webroot = new File("webroot");
-		webroot.mkdir();
-		
+
+		try {
+			Files.createDirectories(webroot.toPath());
+		} catch (IOException ex) {
+			Logger.error(ex, "Failed to create webroot directory");
+			return;
+		}
+
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
 		StaticFileHandler recordingsStatic = new StaticFileHandler(configHandler.getRecordingsFolder(), "/recordings/").downloadQuery(true);
 		StaticFileHandler webStatic = new StaticFileHandler(webroot, "/").serveIndex(true);
@@ -32,7 +39,8 @@ public class WebServer {
 					.use(new Router()
 							.get("/api/status", new StatusRoute())
 							.get("/api/recordings", new RecordingsRoute())
-							.get("/api/export", new ExportRoute())
+							.get("/api/clips", new ClipsRoute())
+							.post("/api/clips/create", new ClipsCreateRoute())
 							.get("/recordings/*", recordingsStatic)
 					)
 					.start();

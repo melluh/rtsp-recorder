@@ -1,6 +1,7 @@
 package com.melluh.rtsprecorder.http;
 
 import com.grack.nanojson.JsonObject;
+import com.melluh.rtsprecorder.Clip;
 import com.melluh.rtsprecorder.Recording;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.rtsprecorder.util.FormatUtil;
@@ -19,13 +20,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ExportRoute implements Route {
+public class ClipsCreateRoute implements Route {
 
     @Override
     public Response serve(Request req) {
         String cameraName = req.getQueryParam("camera");
         if (cameraName == null || cameraName.isEmpty())
             return getErrorResponse(Status.BAD_REQUEST, "request is missing camera");
+
+        String label = req.getQueryParam("label");
+        if (label == null || label.isEmpty())
+            return getErrorResponse(Status.BAD_REQUEST, "request is missing label");
 
         if(RtspRecorder.getInstance().getCameraRegistry().getCamera(cameraName) == null)
             return getErrorResponse(Status.NOT_FOUND, "camera not found");
@@ -58,29 +63,29 @@ public class ExportRoute implements Route {
         String id = UUID.randomUUID().toString().replace("-", "");
 
         try {
-            File directory = new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), "export");
+            File directory = new File(RtspRecorder.getInstance().getConfigHandler().getRecordingsFolder(), "clips");
             Files.createDirectories(directory.toPath());
 
             String fileContents = recordings.stream()
                     .map(recording -> "file '../" + recording.getFilePath() + "'")
                     .collect(Collectors.joining("\n"));
-            Files.writeString(new File(directory, id + ".txt").toPath(), fileContents);
+            File tempFile = new File(directory, id + ".txt");
+            tempFile.deleteOnExit();
+            Files.writeString(tempFile.toPath(), fileContents);
 
             String command = "ffmpeg -hide_banner -ss %start% -to %end% -f concat -safe 0 -i %id%.txt -c copy %id%.mp4"
                     .replace("%id%", id)
                     .replace("%start%", FormatUtil.formatDuration(spliceStart))
                     .replace("%end%", FormatUtil.formatDuration(spliceEnd));
-            Logger.info(command);
 
             Process process = new ProcessBuilder(command.split(" "))
                     .directory(directory)
-                    //.redirectErrorStream(true)
-                    .inheritIO()
                     .start();
 
             process.waitFor();
-            long exitCode = process.exitValue();
+            tempFile.delete();
 
+            long exitCode = process.exitValue();
             if (exitCode != 0) {
                 return WebServer.jsonResponse(Status.INTERNAL_SERVER_ERROR, JsonObject.builder()
                         .value("success", false)
@@ -88,9 +93,13 @@ public class ExportRoute implements Route {
                         .done());
             }
 
+            String filePath = "clips/" + id + ".mp4";
+            Clip clip = new Clip(filePath, label, cameraName, from, to, LocalDateTime.now());
+            RtspRecorder.getInstance().getDatabase().storeClip(clip);
+
             return WebServer.jsonResponse(Status.OK, JsonObject.builder()
                     .value("success", true)
-                    .value("location", "/recordings/export/" + id + ".mp4")
+                    .value("result", clip.toJson())
                     .done());
         } catch (IOException | InterruptedException ex) {
             Logger.error(ex, "Failed to run FFmpeg");
