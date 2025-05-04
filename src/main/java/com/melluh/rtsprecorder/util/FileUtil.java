@@ -6,25 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
-import com.melluh.rtsprecorder.RtspRecorder;
+import com.melluh.rtsprecorder.task.MoveRecordingsTask;
 import org.tinylog.Logger;
 
 public class FileUtil {
 
 	private FileUtil() {}
-	
-	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss");
-	
-	public static LocalDateTime parseFileDateTime(String fileName) {
-		try {
-			return LocalDateTime.from(FORMATTER.parse(fileName));
-		} catch (DateTimeException ex) {
-			Logger.warn("Failed to parse {}", fileName);
-			return null;
-		}
-	}
 	
 	public static float getRecordingDuration(File file) {
 		try {
@@ -33,17 +21,15 @@ public class FileUtil {
 					.start();
 			process.waitFor();
 			
-			if(process.exitValue() != 0) {
-				return -1;
+			if (process.exitValue() != 0) {
+				throw new RuntimeException("Failed to determine recording duration, ffprobe exit code was " + process.exitValue());
 			}
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line = reader.readLine();
-			
 			return line != null ? Float.parseFloat(line) : -1;
 		} catch (IOException | InterruptedException ex) {
-			Logger.error(ex, "Failed to determine recording duration for {}", file.getName());
-			return -1;
+			throw new RuntimeException("Failed to determine recording duration", ex);
 		}
 	}
 	

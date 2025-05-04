@@ -19,6 +19,7 @@ repositories {
 dependencies {
 	implementation("org.tinylog:tinylog-api:2.4.1")
 	implementation("org.tinylog:tinylog-impl:2.4.1")
+	implementation("com.google.guava:guava:33.4.8-jre")
 
 	implementation("com.melluh:simple-http-server:1.1.0")
 	implementation("org.xerial:sqlite-jdbc:3.36.0.3")

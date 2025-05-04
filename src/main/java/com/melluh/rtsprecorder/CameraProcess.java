@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.melluh.rtsprecorder.util.FormatUtil;
+import org.tinylog.Logger;
 
 public class CameraProcess {
 	
@@ -114,14 +115,14 @@ public class CameraProcess {
 		
 		if(prevStatus != ProcessStatus.STOPPING) {
 			camera.warn("Unexpected exit! Restarting process.");
-			RtspRecorder.getInstance().getScheduler().schedule(this::start, 5, TimeUnit.SECONDS);
+			RtspRecorder.SCHEDULED_EXECUTOR.schedule(this::start, 5, TimeUnit.SECONDS);
 			return;
 		}
 		
 		// otherwise if the status was STOPPING and we were restarting
 		if(isRestarting) {
 			isRestarting = false;
-			RtspRecorder.getInstance().getScheduler().schedule(this::start, 2, TimeUnit.SECONDS);
+			RtspRecorder.SCHEDULED_EXECUTOR.schedule(this::start, 2, TimeUnit.SECONDS);
 		}
 	}
 	
@@ -184,8 +185,14 @@ public class CameraProcess {
 		}
 
 		Matcher matcher = OPENING_FOR_WRITING_PATTERN.matcher(line);
-		if(matcher.find()) {
+		if (matcher.find()) {
+			String currentFile = this.activeFile;
 			this.activeFile = matcher.group(1);
+
+			if (currentFile != null) {
+				File file = new File(RtspRecorder.getInstance().getConfigHandler().getTempRecordingsFolder(), currentFile);
+				RtspRecorder.EXECUTOR.execute(() -> FileHandler.process(file));
+			}
 		}
 	}
 	

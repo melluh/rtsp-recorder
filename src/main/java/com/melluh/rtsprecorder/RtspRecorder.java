@@ -16,8 +16,8 @@ public class RtspRecorder {
 
 	private static RtspRecorder instance;
 	
-	private final ExecutorService threadPool = Executors.newCachedThreadPool();
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
+	public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+	public static final ScheduledExecutorService SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(3);
 	
 	private CameraRegistry cameraRegistry;
 	private ConfigHandler configHandler;
@@ -48,10 +48,9 @@ public class RtspRecorder {
 		cameraRegistry.getCameras().forEach(camera -> camera.getProcess().start());
 		Logger.info("FFmpeg processed started.");
 
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-		executor.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
-		executor.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
-		executor.scheduleAtFixedRate(new CleanupRecordingsTask(), 0, 30, TimeUnit.MINUTES);
+		SCHEDULED_EXECUTOR.scheduleAtFixedRate(new WatchdogTask(), 1, 1, TimeUnit.SECONDS);
+		SCHEDULED_EXECUTOR.scheduleAtFixedRate(new MoveRecordingsTask(), 0, 5, TimeUnit.MINUTES);
+		SCHEDULED_EXECUTOR.scheduleAtFixedRate(new CleanupRecordingsTask(), 0, 30, TimeUnit.MINUTES);
 		Logger.info("Tasks initialized.");
 	}
 	
@@ -84,14 +83,6 @@ public class RtspRecorder {
 
 	public Database getDatabase() {
 		return database;
-	}
-	
-	public ExecutorService getThreadPool() {
-		return threadPool;
-	}
-	
-	public ScheduledExecutorService getScheduler() {
-		return scheduler;
 	}
 	
 	public static void main(String[] args) {

@@ -15,3 +15,4 @@ bin/
 config.json
 recordings/
 data.db
+webroot/
