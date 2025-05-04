@@ -4,13 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonWriter;
 import com.melluh.rtsprecorder.ConfigHandler;
 import com.melluh.rtsprecorder.RtspRecorder;
 import com.melluh.simplehttpserver.HttpServer;
-import com.melluh.simplehttpserver.Request;
-import com.melluh.simplehttpserver.RequestHandler;
 import com.melluh.simplehttpserver.protocol.MimeType;
 import com.melluh.simplehttpserver.protocol.Status;
 import com.melluh.simplehttpserver.response.Response;
@@ -30,18 +27,14 @@ public class WebServer {
 		}
 
 		ConfigHandler configHandler = RtspRecorder.getInstance().getConfigHandler();
-		StaticFileHandler recordingsStatic = new StaticFileHandler(configHandler.getRecordingsFolder(), "/recordings/").downloadQuery(true);
-		StaticFileHandler webStatic = new StaticFileHandler(webroot, "/").serveIndex(true);
 		
 		try {
 			new HttpServer(configHandler.getWebPort())
-					.use(webStatic)
 					.use(new Router()
-							.get("/api/status", new StatusRoute())
-							.get("/api/recordings", new RecordingsRoute())
-							.get("/api/clips", new ClipsRoute())
-							.post("/api/clips/create", new ClipsCreateRoute())
-							.get("/recordings/*", recordingsStatic)
+							.get("/status", new StatusRoute())
+							.get("/recordings", new RecordingsRoute())
+							.get("/clips", new ClipsRoute())
+							.post("/clips/create", new ClipsCreateRoute())
 					)
 					.start();
 
@@ -49,9 +42,6 @@ public class WebServer {
 		} catch (IOException ex) {
 			Logger.error(ex, "Failed to start web server");
 		}
-		
-		//router.get().handler(StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false));
-		//router.get("/recordings/*").handler(StaticHandler.create("recordings").setFilesReadOnly(false));
 	}
 
 	public static Response jsonResponse(Status status, Object json) {
