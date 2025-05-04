@@ -19,6 +19,7 @@ public class ConfigHandler {
 	private int recordingsInterval;
 	private int recordingsMaxSize;
 	private int recordingsMaxSizeMargin;
+	private String ffmpegCommand;
 	
 	public boolean load() {
 		File file = new File(FILENAME);
@@ -36,6 +37,7 @@ public class ConfigHandler {
 			this.recordingsInterval = json.getObject("recordings").getInt("interval", 600);
 			this.recordingsMaxSize = json.getObject("recordings").getInt("max_size_gb", -1);
 			this.recordingsMaxSizeMargin = json.getObject("recordings").getInt("max_size_margin_gb", 10);
+			this.ffmpegCommand = json.getString("ffmpeg_command");
 			
 			JsonArray jsonCameras = json.getArray("cameras");
 			if(jsonCameras != null) {
@@ -94,7 +96,11 @@ public class ConfigHandler {
 		// convert gb -> bytes
 		return recordingsMaxSizeMargin * 1073741824L;
 	}
-	
+
+	public String getFfmpegCommand() {
+		return ffmpegCommand;
+	}
+
 	private File ensureDir(File dir) {
 		if(!dir.isDirectory())
 			dir.mkdirs();

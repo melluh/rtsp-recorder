@@ -13,11 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.melluh.rtsprecorder.util.FormatUtil;
-import org.tinylog.Logger;
 
 public class CameraProcess {
 	
-	private static final String COMMAND_FORMAT = "ffmpeg -hide_banner -i %input% -f segment -strftime 1 -segment_time %interval% -segment_atclocktime 1 -segment_format mp4 -an -vcodec copy -reset_timestamps 1 -progress pipe:1 -attempt_recovery 1 %file%";
 	private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 	private static final Pattern OPENING_FOR_WRITING_PATTERN = Pattern.compile("Opening '(\\S+)' for writing");
 	
@@ -127,9 +125,9 @@ public class CameraProcess {
 	}
 	
 	private String getCommand() {
-		return COMMAND_FORMAT
+		return RtspRecorder.getInstance().getConfigHandler().getFfmpegCommand()
 				.replace("%input%", camera.getURL())
-				.replace("%file%", camera.getName() + "-%Y-%m-%d-%H.%M.%S.mp4")
+				.replace("%name%", camera.getName())
 				.replace("%interval%", String.valueOf(RtspRecorder.getInstance().getConfigHandler().getRecordingsInterval()));
 	}
 	
