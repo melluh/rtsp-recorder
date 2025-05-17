@@ -192,6 +192,9 @@ public class CameraProcess {
 				RtspRecorder.EXECUTOR.execute(() -> FileHandler.process(file));
 			}
 		}
+
+		if (RtspRecorder.getInstance().getConfigHandler().isFfmpegToConsole())
+			camera.info(line);
 	}
 	
 	private void setStatus(ProcessStatus status) {
