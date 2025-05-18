@@ -32,6 +32,7 @@ public class WebServer {
 			new HttpServer(configHandler.getWebPort())
 					.use(new Router()
 							.get("/status", new StatusRoute())
+							.get("/health", new HealthRoute())
 							.get("/recordings", new RecordingsRoute())
 							.get("/clips", new ClipsRoute())
 							.post("/clips/create", new ClipsCreateRoute())
